@@ -28,9 +28,9 @@ app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 app.use('/qr-images', express.static(path.join(__dirname, 'qr-images')));
 
 // --- ඊළඟට ඔයාගේ MongoDB Connection එක ---
-mongoose.connect(process.env.Mongo_Url)
-    .then(() => console.log("✅ Local MongoDB Connected!"))
-    .catch(err => console.log("❌ Connection Error: ", err)); 
+mongoose.connect('mongodb://127.0.0.1:27017/epr_portal')
+  .then(() => console.log("✅ Database Connected Successfully!"))
+  .catch(err => console.log("❌ DB Connection Error:", err)); 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -1125,6 +1125,8 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`🚀 Server is live on port ${PORT}`);
+    // Render එකේදී IP එක ඕනේ නැති නිසා මේ ලොග් එක ඇති
+
 });
 
