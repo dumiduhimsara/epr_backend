@@ -29,7 +29,7 @@ app.use('/qr-images', express.static(path.join(__dirname, 'qr-images')));
 
 // --- ඊළඟට ඔයාගේ MongoDB Connection එක ---
 // මේ විදිහට කෝඩ් එක අප්ඩේට් කරන්න
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dumidu:suha123@cluster0.zkbmh7n.mongodb.net/epr_portal?retryWrites=true&w=majority&family=4';
+const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dumidu:su123@cluster0.zkbmh7n.mongodb.net/epr_portal?retryWrites=true&w=majority&family=4';
 
 // 2. Connection එක මේ විදිහට ලියන්න
 mongoose.connect(mongoURI)
