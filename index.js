@@ -18,6 +18,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+
 // 3. Middlewares
 app.use(express.json());
 app.use(cors());
