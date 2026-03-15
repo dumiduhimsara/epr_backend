@@ -28,17 +28,19 @@ app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 app.use('/qr-images', express.static(path.join(__dirname, 'qr-images')));
 
 // --- ඊළඟට ඔයාගේ MongoDB Connection එක ---
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dumidu:suha123@cluster0.zkbmh7n.mongodb.net/epr_portal?retryWrites=true&w=majority&appName=Cluster0';
+// මේ විදිහට කෝඩ් එක අප්ඩේට් කරන්න
+const mongoURI = process.env.MONGODB_URI;
 
-// මෙන්න මේ විදිහටයි mongoose.connect පටන් ගන්න ඕනේ
+if (!mongoURI) {
+    console.error("❌ MONGODB_URI is not defined in Environment Variables!");
+}
+
 mongoose.connect(mongoURI)
-  .then(() => {
-    console.log("✅ Database Connected Successfully!");
-  })
-  .catch((err) => {
-    console.log("❌ DB Connection Error:", err);
+  .then(() => console.log("✅ Database Connected Successfully!"))
+  .catch(err => {
+    console.log("❌ DB Connection Error Details:");
+    console.error(err);
   });
-
 
 
 
