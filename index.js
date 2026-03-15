@@ -29,19 +29,17 @@ app.use('/qr-images', express.static(path.join(__dirname, 'qr-images')));
 
 // --- ඊළඟට ඔයාගේ MongoDB Connection එක ---
 // මේ විදිහට කෝඩ් එක අප්ඩේට් කරන්න
-const mongoURI = process.env.MONGODB_URI;
+const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dumidu:suha123@cluster0.zkbmh7n.mongodb.net/epr_portal?retryWrites=true&w=majority&family=4';
 
-if (!mongoURI) {
-    console.error("❌ MONGODB_URI is not defined in Environment Variables!");
-}
-
+// 2. Connection එක මේ විදිහට ලියන්න
 mongoose.connect(mongoURI)
-  .then(() => console.log("✅ Database Connected Successfully!"))
-  .catch(err => {
+  .then(() => {
+    console.log("✅ Database Connected Successfully!");
+  })
+  .catch((err) => {
     console.log("❌ DB Connection Error Details:");
-    console.error(err);
+    console.error(err.message);
   });
-
 
 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
@@ -1135,11 +1133,9 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
     );
     // ...
 });
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, '0.0.0.0', () => {
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
     console.log(`🚀 Server is live on port ${PORT}`);
-    // Render එකේදී IP එක ඕනේ නැති නිසා මේ ලොග් එක ඇති
 
 });
 
