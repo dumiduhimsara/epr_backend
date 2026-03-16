@@ -312,6 +312,17 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: "Server error during login" });
     }
 });
+
+// --- 2. LOGOUT ROUTE (අලුතින් එකතු කරන්න) ---
+app.post('/api/logout', (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        path: '/' // මුළු සයිට් එකටම අදාළව කුකිය මකන්න
+    });
+    res.status(200).json({ message: "Logged out successfully" });
+});
 //...........................................................................................................................
 
 app.post('/api/customers/forgot-password', async (req, res) => {
@@ -705,7 +716,7 @@ app.post('/api/add-product',authenticateToken, async (req, res) => {
 });
 
 // 16. Get All Products
-app.get('/api/get-products', async (req, res) => {
+app.get('/api/get-products',authenticateToken, async (req, res) => {
     try {
         const products = await QRProduct.find().sort({ createdAt: -1 });
         res.status(200).json(products);
