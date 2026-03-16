@@ -671,7 +671,7 @@ app.get('/api/orders/all', async (req, res) => {
 
 
 // 12. Register Company (QR Management)
-app.post('/api/add-company', async (req, res) => {
+app.post('/api/add-company', authenticateToken,async (req, res) => {
     try {
         const { name, email } = req.body;
         const newCompany = new QRCompany({ name, email });
@@ -683,7 +683,7 @@ app.post('/api/add-company', async (req, res) => {
 });
 
 // 13. Get All Companies
-app.get('/api/get-companies', async (req, res) => {
+app.get('/api/get-companies', authenticateToken, async (req, res) => { 
     try {
         const companies = await QRCompany.find().sort({ createdAt: -1 });
         res.status(200).json(companies);
@@ -693,7 +693,7 @@ app.get('/api/get-companies', async (req, res) => {
 });
 
 // 14. Delete Company
-app.delete('/api/delete-company/:id', async (req, res) => {
+app.delete('/api/delete-company/:id', authenticateToken,async (req, res) => {
     try {
         const { id } = req.params;
         await QRCompany.findByIdAndDelete(id);
@@ -726,7 +726,7 @@ app.get('/api/get-products',authenticateToken, async (req, res) => {
 });
 
 // 17. Delete Product
-app.delete('/api/delete-product/:id', async (req, res) => {
+app.delete('/api/delete-product/:id',authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         await QRProduct.findByIdAndDelete(id);
