@@ -693,7 +693,7 @@ app.delete('/api/delete-company/:id', async (req, res) => {
 });
 //..........................................................................................
 // 15. Add Product (QR Management)
-app.post('/api/add-product', async (req, res) => {
+app.post('/api/add-product',authenticateToken, async (req, res) => {
     try {
         const { category, brand } = req.body;
         const newProduct = new QRProduct({ category, brand });
