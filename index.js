@@ -26,8 +26,10 @@ app.use(cookieParser());
 app.use(cors({
     origin: 'https://dumidu.vercel.app',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 👈 OPTIONS එකතු කළා
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 
 // 2. Auth Middleware (මේක අලුතින් දාන්න)
