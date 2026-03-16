@@ -20,15 +20,33 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// 1. Middlewares (ඔයා එවපු කොටස)
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'https://dumidu.vercel.app', // ඔයාගේ Frontend එකේ URL එක විතරක් දෙන්න
-    credentials: true, // Cookies එහා මෙහා යන්න අවසර දීම
+    origin: 'https://dumidu.vercel.app',
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// 2. Auth Middleware (මේක අලුතින් දාන්න)
+const authenticateToken = (req, res, next) => {
+    // Cookie එකෙන් හෝ Header එකෙන් Token එක ගන්නවා
+    const token = req.cookies.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+
+    if (!token) {
+        return res.status(401).json({ error: "Access denied. Please login." });
+    }
+
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026');
+        req.user = verified;
+        next(); 
+    } catch (err) {
+        res.status(403).json({ error: "Invalid or expired token" });
+    }
+};
 // 4. Static Folders
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
