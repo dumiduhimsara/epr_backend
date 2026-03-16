@@ -24,6 +24,30 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// index.js (Backend)
+
+// 🚨 මේක තමයි ටෝකන් එකේ ආරක්ෂාව තහවුරු කරන රහස් කෝඩ් එක (Secret Key)
+const JWT_SECRET = process.env.JWT_SECRET || 'EPR_PORTAL_SECURE_2024_@#$';
+
+// 🛡️ Authentication Middleware
+// මේකෙන් තමයි ඉදිරියට හැම පේජ් එකකදීම ටෝකන් එක ඇත්තද කියලා චෙක් කරන්නේ
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Header එකෙන් Token එක වෙන් කරගන්නවා
+
+    if (!token) {
+        return res.status(401).json({ error: "Access Denied. No session found." });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: "Your session has expired. Please login again." });
+        }
+        req.user = user; // ටෝකන් එකේ තියෙන විස්තර Request එකට දානවා
+        next();
+    });
+};
+
 // 4. Static Folders
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
