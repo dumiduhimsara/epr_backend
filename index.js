@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -19,10 +20,14 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-
-// 3. Middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+    origin: 'https://dumidu.vercel.app', // ඔයාගේ Frontend එකේ URL එක විතරක් දෙන්න
+    credentials: true, // Cookies එහා මෙහා යන්න අවසර දීම
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // 4. Static Folders
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -256,15 +261,25 @@ app.post('/api/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid credentials!" });
 
+        // 1. Token එක සාදා ගැනීම
         const token = jwt.sign(
             { id: user._id, role: role }, 
             process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026', 
             { expiresIn: '1d' } 
         );
 
+        // --- 🔒 2. SECURITY UPDATE: SET HTTP-ONLY COOKIE ---
+        // අපි Token එක JSON එකේ යවන්නේ නැතුව Cookie එකක දානවා
+        res.cookie('token', token, {
+            httpOnly: true,  // JavaScript වලට මේක කියවන්න බැහැ (XSS Safe)
+            secure: true,    // HTTPS පාවිච්චි කරන නිසා (Railway/Vercel) true විය යුතුයි
+            sameSite: 'None', // Cross-site cookies වැඩ කරන්න මේක ඕනේ
+            maxAge: 24 * 60 * 60 * 1000 // දවසකින් expire වේ
+        });
+
+        // 3. Response එකෙන් 'token' එක අයින් කර දත්ත යැවීම
         res.status(200).json({ 
             message: "Login Successful",
-            token: token, 
             role: role,
             user: { 
                 fullName: user.fullName || user.contactPersonName || user.name, 
@@ -273,7 +288,9 @@ app.post('/api/login', async (req, res) => {
                 coPartnerId: user.coPartnerId || null
             } 
         });
+
     } catch (error) {
+        console.error("Login Server Error:", error);
         res.status(500).json({ error: "Server error during login" });
     }
 });
