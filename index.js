@@ -1,4 +1,3 @@
-import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -20,34 +19,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1. Middlewares (ඔයා එවපු කොටස)
+
+// 3. Middlewares
 app.use(express.json());
-app.use(cookieParser());
-app.use(cors({
-    origin: 'https://dumidu.vercel.app',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 👈 OPTIONS එකතු කළා
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-}));
+app.use(cors());
 
-// 2. Auth Middleware (මේක අලුතින් දාන්න)
-const authenticateToken = (req, res, next) => {
-    // 1. කුකී එකෙන් බලනවා
-    // 2. ඒක නැත්නම් Header එකෙන් බලනවා (Authorization: Bearer <token>)
-    const token = req.cookies.token || (req.headers['authorization']?.split(' ')[1]);
-
-    if (!token) {
-        return res.status(401).json({ error: "Unauthorized: No token provided" });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: "Forbidden: Invalid token" });
-        req.user = user;
-        next();
-    });
-};
 // 4. Static Folders
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
@@ -299,7 +275,6 @@ app.post('/api/login', async (req, res) => {
         // 3. Response එකෙන් 'token' එක අයින් කර දත්ත යැවීම
         res.status(200).json({ 
             message: "Login Successful",
-            token: token,
             role: role,
             user: { 
                 fullName: user.fullName || user.contactPersonName || user.name, 
@@ -313,17 +288,6 @@ app.post('/api/login', async (req, res) => {
         console.error("Login Server Error:", error);
         res.status(500).json({ error: "Server error during login" });
     }
-});
-
-// --- 2. LOGOUT ROUTE (අලුතින් එකතු කරන්න) ---
-app.post('/api/logout', (req, res) => {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'None',
-        path: '/' // මුළු සයිට් එකටම අදාළව කුකිය මකන්න
-    });
-    res.status(200).json({ message: "Logged out successfully" });
 });
 //...........................................................................................................................
 
@@ -673,7 +637,7 @@ app.get('/api/orders/all', async (req, res) => {
 
 
 // 12. Register Company (QR Management)
-app.post('/api/add-company', authenticateToken,async (req, res) => {
+app.post('/api/add-company', async (req, res) => {
     try {
         const { name, email } = req.body;
         const newCompany = new QRCompany({ name, email });
@@ -685,7 +649,7 @@ app.post('/api/add-company', authenticateToken,async (req, res) => {
 });
 
 // 13. Get All Companies
-app.get('/api/get-companies', authenticateToken, async (req, res) => { 
+app.get('/api/get-companies', async (req, res) => {
     try {
         const companies = await QRCompany.find().sort({ createdAt: -1 });
         res.status(200).json(companies);
@@ -695,7 +659,7 @@ app.get('/api/get-companies', authenticateToken, async (req, res) => {
 });
 
 // 14. Delete Company
-app.delete('/api/delete-company/:id', authenticateToken,async (req, res) => {
+app.delete('/api/delete-company/:id', async (req, res) => {
     try {
         const { id } = req.params;
         await QRCompany.findByIdAndDelete(id);
@@ -706,7 +670,7 @@ app.delete('/api/delete-company/:id', authenticateToken,async (req, res) => {
 });
 //..........................................................................................
 // 15. Add Product (QR Management)
-app.post('/api/add-product',authenticateToken, async (req, res) => {
+app.post('/api/add-product', async (req, res) => {
     try {
         const { category, brand } = req.body;
         const newProduct = new QRProduct({ category, brand });
@@ -718,7 +682,7 @@ app.post('/api/add-product',authenticateToken, async (req, res) => {
 });
 
 // 16. Get All Products
-app.get('/api/get-products',authenticateToken, async (req, res) => {
+app.get('/api/get-products', async (req, res) => {
     try {
         const products = await QRProduct.find().sort({ createdAt: -1 });
         res.status(200).json(products);
@@ -728,7 +692,7 @@ app.get('/api/get-products',authenticateToken, async (req, res) => {
 });
 
 // 17. Delete Product
-app.delete('/api/delete-product/:id',authenticateToken, async (req, res) => {
+app.delete('/api/delete-product/:id', async (req, res) => {
     try {
         const { id } = req.params;
         await QRProduct.findByIdAndDelete(id);
@@ -740,7 +704,7 @@ app.delete('/api/delete-product/:id',authenticateToken, async (req, res) => {
 
 
 
-// 18. Add New Co-Partner (Auto-Generate ID version).....................................................................
+// 18. Add New Co-Partner (Auto-Generate ID version)
 app.post('/api/partners/register', async (req, res) => {
     try {
         const { password } = req.body;
