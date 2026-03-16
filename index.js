@@ -297,6 +297,7 @@ app.post('/api/login', async (req, res) => {
         // 3. Response එකෙන් 'token' එක අයින් කර දත්ත යැවීම
         res.status(200).json({ 
             message: "Login Successful",
+            token: token,
             role: role,
             user: { 
                 fullName: user.fullName || user.contactPersonName || user.name, 
@@ -737,7 +738,7 @@ app.delete('/api/delete-product/:id',authenticateToken, async (req, res) => {
 
 
 
-// 18. Add New Co-Partner (Auto-Generate ID version)
+// 18. Add New Co-Partner (Auto-Generate ID version).....................................................................
 app.post('/api/partners/register', async (req, res) => {
     try {
         const { password } = req.body;
