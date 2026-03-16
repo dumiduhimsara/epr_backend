@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -232,7 +233,7 @@ app.post('/api/admin/register', async (req, res) => {
 
 
 
-// --- 2. UNIFIED LOGIN (Admin, Customer & Partner) ---
+// --- 2. UNIFIED LOGIN (Admin, Customer & Partner) ---.................................................................
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -255,8 +256,15 @@ app.post('/api/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid credentials!" });
 
+        const token = jwt.sign(
+            { id: user._id, role: role }, 
+            process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026', 
+            { expiresIn: '1d' } 
+        );
+
         res.status(200).json({ 
             message: "Login Successful",
+            token: token, 
             role: role,
             user: { 
                 fullName: user.fullName || user.contactPersonName || user.name, 
@@ -269,6 +277,7 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: "Server error during login" });
     }
 });
+//...........................................................................................................................
 
 app.post('/api/customers/forgot-password', async (req, res) => {
     const { email } = req.body;
