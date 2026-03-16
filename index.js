@@ -256,25 +256,15 @@ app.post('/api/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid credentials!" });
 
-        // 1. Token එක සාදා ගැනීම
         const token = jwt.sign(
             { id: user._id, role: role }, 
             process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026', 
             { expiresIn: '1d' } 
         );
 
-        // --- 🔒 2. SECURITY UPDATE: SET HTTP-ONLY COOKIE ---
-        // අපි Token එක JSON එකේ යවන්නේ නැතුව Cookie එකක දානවා
-        res.cookie('token', token, {
-            httpOnly: true,  // JavaScript වලට මේක කියවන්න බැහැ (XSS Safe)
-            secure: true,    // HTTPS පාවිච්චි කරන නිසා (Railway/Vercel) true විය යුතුයි
-            sameSite: 'None', // Cross-site cookies වැඩ කරන්න මේක ඕනේ
-            maxAge: 24 * 60 * 60 * 1000 // දවසකින් expire වේ
-        });
-
-        // 3. Response එකෙන් 'token' එක අයින් කර දත්ත යැවීම
         res.status(200).json({ 
             message: "Login Successful",
+            token: token, 
             role: role,
             user: { 
                 fullName: user.fullName || user.contactPersonName || user.name, 
@@ -283,9 +273,7 @@ app.post('/api/login', async (req, res) => {
                 coPartnerId: user.coPartnerId || null
             } 
         });
-
     } catch (error) {
-        console.error("Login Server Error:", error);
         res.status(500).json({ error: "Server error during login" });
     }
 });
