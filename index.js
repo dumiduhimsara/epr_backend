@@ -32,20 +32,19 @@ app.use(cors({
 
 // 2. Auth Middleware (මේක අලුතින් දාන්න)
 const authenticateToken = (req, res, next) => {
-    // Cookie එකෙන් හෝ Header එකෙන් Token එක ගන්නවා
-    const token = req.cookies.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+    // 1. කුකී එකෙන් බලනවා
+    // 2. ඒක නැත්නම් Header එකෙන් බලනවා (Authorization: Bearer <token>)
+    const token = req.cookies.token || (req.headers['authorization']?.split(' ')[1]);
 
     if (!token) {
-        return res.status(401).json({ error: "Access denied. Please login." });
+        return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
-    try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026');
-        req.user = verified;
-        next(); 
-    } catch (err) {
-        res.status(403).json({ error: "Invalid or expired token" });
-    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: "Forbidden: Invalid token" });
+        req.user = user;
+        next();
+    });
 };
 // 4. Static Folders
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
