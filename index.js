@@ -289,6 +289,12 @@ app.post('/api/login', async (req, res) => {
 
         if (!user) return res.status(400).json({ error: "User not found!" });
 
+        if (role === 'CUSTOMER' && user.status !== 'Approved') {
+            return res.status(403).json({ 
+                error: "Your account is pending approval. Please wait for the admin's confirmation email." 
+            });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid credentials!" });
 
@@ -306,7 +312,9 @@ app.post('/api/login', async (req, res) => {
                 fullName: user.fullName || user.contactPersonName || user.name, 
                 email: user.email || user.officialEmail, 
                 profilePic: user.profilePic || null,
-                coPartnerId: user.coPartnerId || null
+                coPartnerId: user.coPartnerId || null,
+                regNumber: user.regNumber || null
+                
             } 
         });
     } catch (error) {
