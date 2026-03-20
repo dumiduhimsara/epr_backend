@@ -1225,21 +1225,25 @@ app.listen(PORT, () => {
 
 
 // Pending ඉන්න අය විතරක් ගන්න Route එක..........................................................................
+// 1. Pending ඉන්න අය විතරක් ගන්න Route එක
 app.get('/api/admin/pending-customers', async (req, res) => {
     try {
-        const pendingList = await Customer.find({ status: 'Pending' });
+        // mongoose හරහා කෙලින්ම model එක ලබා ගැනීම (is not defined error එක වැළැක්වීමට)
+        const CustomerModel = mongoose.model('Customer');
+        const pendingList = await CustomerModel.find({ status: 'Pending' });
         res.status(200).json(pendingList);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-
+// 2. Dashboard Stats ගන්න Route එක
 app.get('/api/admin/customer-stats', async (req, res) => {
     try {
-        const total = await Customer.countDocuments();
-        const pending = await Customer.countDocuments({ status: 'Pending' });
-        const approved = await Customer.countDocuments({ status: 'Approved' });
+        const CustomerModel = mongoose.model('Customer');
+        const total = await CustomerModel.countDocuments();
+        const pending = await CustomerModel.countDocuments({ status: 'Pending' });
+        const approved = await CustomerModel.countDocuments({ status: 'Approved' });
 
         res.status(200).json({
             total,
@@ -1251,18 +1255,19 @@ app.get('/api/admin/customer-stats', async (req, res) => {
     }
 });
 
-
+// 3. Customer ව Approve කරන Route එක
 app.put('/api/admin/approve-customer/:id', async (req, res) => {
     try {
         const customerId = req.params.id;
-        const customer = await Customer.findById(customerId);
+        const CustomerModel = mongoose.model('Customer');
+        const customer = await CustomerModel.findById(customerId);
         
         if (!customer) return res.status(404).json({ message: "Customer not found" });
 
-        // 1. Status එක Update කරනවා
+        // Status එක Update කරනවා
         customer.status = 'Approved';
         
-        // 🚨 Database එකේ දැනටමත් Reg Number එකක් නැත්නම් විතරක් අලුත් එකක් හදනවා
+        // Database එකේ දැනටමත් Reg Number එකක් නැත්නම් විතරක් අලුත් එකක් හදනවා
         if (!customer.regNumber) {
             customer.regNumber = `EPR-${new Date().getFullYear()}-${Math.floor(1000000 + Math.random() * 9000000)}`;
         }
@@ -1318,7 +1323,6 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
 
         await transporter.sendMail(mailOptions);
         
-        // Success response එකක් යවනවා
         res.status(200).json({ 
             success: true, 
             message: "Professional Email Sent Successfully!", 
