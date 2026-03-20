@@ -1279,3 +1279,31 @@ app.post('/api/admin/approve-customer/:id', async (req, res) => {
         res.status(500).json({ error: "Failed to approve customer" });
     }
 });
+
+
+// Pending ඉන්න අය විතරක් ගන්න Route එක
+app.get('/api/admin/pending-customers', async (req, res) => {
+    try {
+        const pendingList = await Customer.find({ status: 'Pending' });
+        res.status(200).json(pendingList);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+app.get('/api/admin/customer-stats', async (req, res) => {
+    try {
+        const total = await Customer.countDocuments();
+        const pending = await Customer.countDocuments({ status: 'Pending' });
+        const approved = await Customer.countDocuments({ status: 'Approved' });
+
+        res.status(200).json({
+            total,
+            pending,
+            approved
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
