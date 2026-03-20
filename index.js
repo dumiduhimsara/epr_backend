@@ -1223,3 +1223,59 @@ app.listen(PORT, () => {
 
 });
 
+
+// Admin විසින් Customer ව Approve කරන Route එක
+app.post('/api/admin/approve-customer/:id', async (req, res) => {
+    try {
+        const customerId = req.params.id;
+
+        // 1. Customer ව සොයාගෙන Status එක Approved කිරීම
+        const customer = await Customer.findByIdAndUpdate(
+            customerId,
+            { status: 'Approved' },
+            { new: true }
+        );
+
+        if (!customer) {
+            return res.status(404).json({ message: "Customer not found" });
+        }
+
+        // 2. Email එක යැවීමට ලෑස්ති වීම (Nodemailer)
+        // ඔයා කලින් හදපු transporter එක මෙතන පාවිච්චි කරන්න
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: customer.officialEmail,
+            subject: 'Congratulations! Your EPR Registration is Approved',
+            html: `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; border: 1px solid #e0e0e0; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #2ecc71; text-align: center;">Registration Approved!</h2>
+                    <p>Dear <strong>${customer.companyName}</strong>,</p>
+                    <p>We are pleased to inform you that your registration with the EPR Portal has been reviewed and <strong>Approved</strong> by our admin team.</p>
+                    
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Registration Number:</strong> ${customer.regNumber}</p>
+                        <p style="margin: 5px 0;"><strong>Login Email:</strong> ${customer.officialEmail}</p>
+                        <p style="margin: 5px 0;"><strong>Password:</strong> (The password you set during registration)</p>
+                    </div>
+
+                    <p>You can now log in to your dashboard and access all the features.</p>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="https://your-site-url.com/login" style="background: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
+                    </div>
+                    <br>
+                    <p>Best Regards,<br><strong>EPR Administration Team</strong></p>
+                </div>
+            `
+        };
+
+        // 3. Email එක යැවීම
+        await transporter.sendMail(mailOptions);
+
+        console.log(`✅ Approved & Email Sent to: ${customer.officialEmail}`);
+        res.status(200).json({ message: "Customer approved and email sent successfully!" });
+
+    } catch (error) {
+        console.error("❌ Approval Error:", error);
+        res.status(500).json({ error: "Failed to approve customer" });
+    }
+});
