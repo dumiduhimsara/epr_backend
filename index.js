@@ -1314,7 +1314,9 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
     try {
         const customerId = req.params.id;
 
-        const customer = await User.findById(customerId); 
+        // 🚨 වැරැද්ද මෙතන: 'User' වෙනුවට 'Customer' වෙන්න ඕනේ
+        const customer = await Customer.findById(customerId); 
+        
         if (!customer) {
             return res.status(404).json({ message: "Customer not found" });
         }
@@ -1322,7 +1324,7 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         customer.status = 'Approved';
         await customer.save();
 
-
+        // දැනට සාර්ථකයි කියලා message එක යවනවා
         res.status(200).json({ 
             message: "Customer approved successfully!",
             customer: customer 
@@ -1330,6 +1332,6 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
 
     } catch (error) {
         console.error("Approve Error:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ error: error.message });
     }
 });
