@@ -1316,13 +1316,16 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         
         if (!customer) return res.status(404).json({ message: "Customer not found" });
 
-        // Status එක Update කරනවා
+        // 1. Status එක Update කරනවා
         customer.status = 'Approved';
-        const regNo = `EPR-${Math.floor(1000 + Math.random() * 9000)}`; // අලුත් Reg No එකක්
-        customer.regNumber = regNo;
+        
+        // 🚨 Database එකේ දැනටමත් Reg Number එකක් නැත්නම් විතරක් අලුත් එකක් හදනවා
+        if (!customer.regNumber) {
+            customer.regNumber = `EPR-${new Date().getFullYear()}-${Math.floor(1000000 + Math.random() * 9000000)}`;
+        }
+        
         await customer.save();
 
-        // 🚨 ඔයාගේ React App එකේ URL එක මෙතනට දාන්න (උදා: https://epr-frontend.vercel.app)
         const frontendURL = "https://dumidu.vercel.app/"; 
 
         const transporter = nodemailer.createTransport({
@@ -1371,10 +1374,16 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: "Professional Email Sent Successfully!", customer });
+        
+        // Success response එකක් යවනවා
+        res.status(200).json({ 
+            success: true, 
+            message: "Professional Email Sent Successfully!", 
+            customer 
+        });
 
     } catch (error) {
         console.error("Approve/Email Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
