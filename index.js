@@ -1309,29 +1309,72 @@ app.get('/api/admin/customer-stats', async (req, res) => {
 });
 
 
-// 1. Customer කෙනෙක්ව Approve කරන Route එක
 app.put('/api/admin/approve-customer/:id', async (req, res) => {
     try {
         const customerId = req.params.id;
-
-        // 🚨 වැරැද්ද මෙතන: 'User' වෙනුවට 'Customer' වෙන්න ඕනේ
-        const customer = await Customer.findById(customerId); 
+        const customer = await Customer.findById(customerId);
         
-        if (!customer) {
-            return res.status(404).json({ message: "Customer not found" });
-        }
+        if (!customer) return res.status(404).json({ message: "Customer not found" });
 
+        // Status එක Update කරනවා
         customer.status = 'Approved';
+        const regNo = `EPR-${Math.floor(1000 + Math.random() * 9000)}`; // අලුත් Reg No එකක්
+        customer.regNumber = regNo;
         await customer.save();
 
-        // දැනට සාර්ථකයි කියලා message එක යවනවා
-        res.status(200).json({ 
-            message: "Customer approved successfully!",
-            customer: customer 
+        // 🚨 ඔයාගේ React App එකේ URL එක මෙතනට දාන්න (උදා: https://epr-frontend.vercel.app)
+        const frontendURL = "https://dumidu.vercel.app/"; 
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS 
+            }
         });
 
+        const mailOptions = {
+            from: `"EPR Portal Management" <${process.env.EMAIL_USER}>`,
+            to: customer.officialEmail,
+            subject: '✅ Registration Approved - Access Your EPR Dashboard',
+            html: `
+                <div style="max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                    <div style="background-color: #2ecc71; padding: 30px; text-align: center; color: white;">
+                        <h1 style="margin: 0; font-size: 28px; letter-spacing: 1px;">EPR PORTAL</h1>
+                        <p style="margin: 5px 0 0; opacity: 0.9;">Account Successfully Verified</p>
+                    </div>
+
+                    <div style="padding: 30px; background-color: #ffffff;">
+                        <h2 style="color: #2c3e50; margin-top: 0;">Hello ${customer.companyName},</h2>
+                        <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                            Great news! Your registration request has been reviewed and <b>Approved</b> by our administration team. You can now log in and manage your environmental reports and certifications.
+                        </p>
+
+                        <div style="background-color: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                            <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Login Credentials</h4>
+                            <p style="margin: 10px 0; font-size: 15px;"><strong>Username:</strong> <span style="color: #2ecc71;">${customer.officialEmail}</span></p>
+                            <p style="margin: 10px 0; font-size: 15px;"><strong>Registration ID:</strong> ${customer.regNumber}</p>
+                            <p style="margin: 10px 0; font-size: 14px; color: #888;"><i>*Use the password you chose during the registration process.</i></p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 30px;">
+                            <a href="${frontendURL}" style="background-color: #2ecc71; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);">LOGIN TO DASHBOARD</a>
+                        </div>
+                    </div>
+
+                    <div style="background-color: #f1f1f1; padding: 20px; text-align: center; color: #95a5a6; font-size: 12px;">
+                        <p style="margin: 0;">This is an automated security email from EPR Portal.</p>
+                        <p style="margin: 5px 0 0;">&copy; 2026 Environmental Protection Authority. All Rights Reserved.</p>
+                    </div>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: "Professional Email Sent Successfully!", customer });
+
     } catch (error) {
-        console.error("Approve Error:", error);
+        console.error("Approve/Email Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
