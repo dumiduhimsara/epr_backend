@@ -1307,3 +1307,29 @@ app.get('/api/admin/customer-stats', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
+// 1. Customer කෙනෙක්ව Approve කරන Route එක
+app.put('/api/admin/approve-customer/:id', async (req, res) => {
+    try {
+        const customerId = req.params.id;
+
+        const customer = await User.findById(customerId); 
+        if (!customer) {
+            return res.status(404).json({ message: "Customer not found" });
+        }
+
+        customer.status = 'Approved';
+        await customer.save();
+
+
+        res.status(200).json({ 
+            message: "Customer approved successfully!",
+            customer: customer 
+        });
+
+    } catch (error) {
+        console.error("Approve Error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
