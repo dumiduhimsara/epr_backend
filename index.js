@@ -126,6 +126,15 @@ const adminSchema = new mongoose.Schema({
 });
 const Admin = mongoose.model('Admin', adminSchema);
 
+
+//............................................................................................................................
+// 1. අංක පිළිවෙළට තියාගන්න Counter Model එක
+const counterSchema = new mongoose.Schema({
+    id: { type: String, required: true },
+    seq: { type: Number, default: 0 }
+});
+const Counter = mongoose.model('Counter', counterSchema);
+
 const customerSchema = new mongoose.Schema({
     companyName: { type: String, required: true },
     orgRole: { type: String, required: true },
@@ -141,7 +150,10 @@ const customerSchema = new mongoose.Schema({
     contactPersonMobile: { type: String, required: true },
     dob: { type: String, required: true },
     password: { type: String, required: true },
-    profilePic: { type: String, default: '' }
+    profilePic: { type: String, default: '' },
+    status: { type: String, default: 'Pending' }, // Admin approve කරනකම් Pending
+    regNumber: { type: String, unique: true },    // EPR-2026-0000001 වගේ අංකය
+    registeredAt: { type: Date, default: Date.now }
 });
 const Customer = mongoose.model('Customer', customerSchema);
 
@@ -460,23 +472,53 @@ app.post('/api/delete-photo', async (req, res) => {
         res.status(500).json({ error: "Delete failed" });
     }
 });
-
-// 5. Customer Registration
+//..............................................................................................................................
 app.post('/api/customers/register', async (req, res) => {
-    try {
-        const data = req.body;
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(data.password, salt);
-        const newCustomer = new Customer({ ...data, password: hashedPassword });
-        await newCustomer.save();
-        res.status(201).json({ message: "Customer registered successfully!" });
-    } catch (error) {
-        res.status(500).json({ error: "Registration failed" });
-    }
+    try {
+        const data = req.body;
+
+        // 1. Counter එකෙන් ඊළඟට එන අංකය ලබා ගැනීම (Atomic Update)
+        // මේකෙන් තමයි මිලියන ගණනක් ආවත් අංක පටලැවෙන්නේ නැතුව පිළිවෙළට දෙන්නේ
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'customer_reg' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+
+        // 2. අංකය Format කිරීම (උදා: EPR-2026-0000001)
+        const sequenceStr = counter.seq.toString().padStart(7, '0');
+        const currentYear = new Date().getFullYear();
+        const regNo = `EPR-${currentYear}-${sequenceStr}`;
+
+        // 3. Password එක Hash කිරීම (ඔයාගේ පරණ කෝඩ් එකමයි)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(data.password, salt);
+
+        // 4. අලුත් Customer ව සාදා ගැනීම
+        // මෙතනදී පරණ දත්ත වලට අමතරව regNumber සහ status අපි එකතු කරනවා
+        const newCustomer = new Customer({ 
+            ...data, 
+            password: hashedPassword,
+            regNumber: regNo,       // අලුතින් එක් කළා
+            status: 'Pending'      // අලුතින් එක් කළා (Default)
+        });
+
+        await newCustomer.save();
+
+        console.log(`✅ New Registration: ${regNo}`); // Backend එකේ බලාගන්න
+        
+        res.status(201).json({ 
+            message: "Customer registered successfully! Admin approval pending.",
+            regNumber: regNo 
+        });
+
+    } catch (error) {
+        console.error("❌ Error:", error);
+        res.status(500).json({ error: "Registration failed" });
+    }
 });
 
-
-// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---
+// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---..............................................................................
 app.get('/api/user-details/:email', async (req, res) => {
     try {
         const userEmail = req.params.email; // URL එකෙන් ඊමේල් එක ගන්නවා
