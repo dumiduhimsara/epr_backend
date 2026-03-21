@@ -1281,31 +1281,71 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         
         if (!updatedCustomer) return res.status(404).json({ error: "Customer not found" });
 
-        // --- Approve කරපු ගමන් ඊමේල් එකක් යවන කොටස ---
+        // --- Professional Approval Email Logic ---
         try {
             const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-            sendSmtpEmail.subject = "Account Approved - EPR System";
+            sendSmtpEmail.subject = "Welcome to EPR System - Account Approved! 🎉";
+            
+            // පට්ටම ලස්සන HTML Design එකක් මෙන්න
             sendSmtpEmail.htmlContent = `
-                <html>
-                    <body>
-                        <h2>Hi ${updatedCustomer.contactPersonName || 'Customer'},</h2>
-                        <p>Great news! Your account at <b>EPR System</b> has been approved by the administrator.</p>
-                        <p>You can now log in to your dashboard using your registered email and password.</p>
-                        <br/>
-                        <a href="https://dumidu.vercel.app" style="padding: 10px 20px; background-color: #2ecc71; color: white; text-decoration: none; border-radius: 5px;">Login Now</a>
-                    </body>
-                </html>`;
+            <!DOCTYPE html>
+            <html>
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                    <tr>
+                        <td align="center">
+                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #1a1a1a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                                <tr>
+                                    <td align="center" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding: 40px 20px;">
+                                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 2px;">EPR SYSTEM</h1>
+                                        <p style="color: #e0e0e0; margin-top: 10px;">Your Sustainable Partner</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 40px 30px; background-color: #ffffff;">
+                                        <h2 style="color: #2c3e50; margin-top: 0;">Congratulations, ${updatedCustomer.contactPersonName}!</h2>
+                                        <p style="color: #555; line-height: 1.6; font-size: 16px;">
+                                            We are excited to inform you that your registration for <b>${updatedCustomer.companyName}</b> has been officially <b>Approved</b> by our administrator.
+                                        </p>
+                                        
+                                        <div style="background-color: #f9f9f9; border-left: 4px solid #2ecc71; padding: 20px; margin: 30px 0;">
+                                            <p style="margin: 0; color: #333; font-weight: bold; font-size: 14px; text-transform: uppercase;">Your Login Credentials:</p>
+                                            <p style="margin: 10px 0 5px; color: #555;"><b>Username (Email):</b> ${updatedCustomer.officialEmail}</p>
+                                            <p style="margin: 0; color: #555;"><b>Password:</b> <span style="color: #e74c3c;">[The password you provided during registration]</span></p>
+                                        </div>
+
+                                        <p style="color: #555; line-height: 1.6; font-size: 15px;">
+                                            You can now access your dashboard to manage orders, track sustainability metrics, and more.
+                                        </p>
+
+                                        <div align="center" style="margin-top: 40px;">
+                                            <a href="https://dumidu.vercel.app" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);">Login to Your Dashboard</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 20px; background-color: #1a1a1a; color: #777; font-size: 12px;">
+                                        <p>&copy; 2026 EPR System. All Rights Reserved.</p>
+                                        <p>This is an automated message, please do not reply.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>`;
+
             sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" };
             sendSmtpEmail.to = [{ "email": updatedCustomer.officialEmail }];
 
             const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
             await apiInstance.sendTransacEmail(sendSmtpEmail);
-            console.log(`✅ Approval email sent to ${updatedCustomer.officialEmail}`);
+            console.log(`✅ Professional Approval email sent to ${updatedCustomer.officialEmail}`);
+
         } catch (mailError) {
-            console.error("❌ Failed to send approval email:", mailError);
-            // ඊමේල් එක ගියේ නැතත් status එක update වෙලා නිසා error එකක් throw කරන්නේ නැහැ
+            console.error("❌ Failed to send professional email:", mailError);
         }
-        // -------------------------------------------
 
         res.status(200).json({ message: "Customer Approved & Email Sent!", updatedCustomer });
     } catch (error) {
