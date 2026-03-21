@@ -71,21 +71,19 @@ mongoose.connect(mongoURI)
 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
 let otpStore = {}; 
+
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Port 587 සඳහා මේක false විය යුතුයි
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS 
+    },
+    tls: {
+        rejectUnauthorized: false // මේක දැම්මම connection එක block වෙන්නේ නැහැ
     }
 });
-/*transporter.verify((error, success) => {
-    if (error) {
-        console.log("❌ Email configuration failed, but server is running.");
-    } else {
-        console.log("📧 Email Server is ready!");
-    }
-});*/
-
 
 
 // --- MULTER STORAGE SETUP ---
