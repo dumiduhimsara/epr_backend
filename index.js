@@ -7,13 +7,12 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import SibApiV3Sdk from 'sib-api-v3-sdk';
+import PDFDocument from 'pdfkit';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 
-// 1. Env Config එක (අනිත් හැමදේටම කලින් මේක තියෙන්න ඕනේ)
 dotenv.config();
 
-// 2. ES Module වලට __dirname හදාගන්න එක
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -1281,52 +1280,70 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         
         if (!updatedCustomer) return res.status(404).json({ error: "Customer not found" });
 
-        // --- Professional Approval Email Logic ---
+        // --- 1. PDF Certificate එක Generate කිරීම ---
+        const generateCertificateBuffer = (customer) => {
+            return new Promise((resolve, reject) => {
+                const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 50 });
+                let buffers = [];
+                doc.on('data', buffers.push.bind(buffers));
+                doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+                // Certificate Design එක (Border සහ Text)
+                doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).lineWidth(10).stroke('#1a1a1a');
+                doc.rect(35, 35, doc.page.width - 70, doc.page.height - 70).lineWidth(2).stroke('#c5a059');
+
+                doc.fillColor('#27ae60').fontSize(50).text('CERTIFICATE', { align: 'center' }).moveDown(0.5);
+                doc.fillColor('#555').fontSize(20).text('OF REGISTRATION', { align: 'center', characterSpacing: 2 }).moveDown(1.5);
+                
+                doc.fillColor('#333').fontSize(18).text('This is to certify that', { align: 'center' }).moveDown(0.5);
+                doc.fillColor('#1a1a1a').fontSize(35).text(customer.companyName.toUpperCase(), { align: 'center' }).moveDown(0.5);
+                doc.fillColor('#333').fontSize(18).text('is a registered and approved partner of the', { align: 'center' }).moveDown(0.3);
+                doc.fillColor('#27ae60').fontSize(22).text('EPR SUSTAINABILITY NETWORK', { align: 'center' }).moveDown(2);
+
+                doc.fontSize(14).fillColor('#333');
+                doc.text(`Registration No: ${customer.regNumber}`, 60, 450);
+                doc.text(`Approval Date: ${new Date().toLocaleDateString()}`, doc.page.width - 200, 450);
+
+                doc.end();
+            });
+        };
+
+        const pdfBuffer = await generateCertificateBuffer(updatedCustomer);
+
+        // --- 2. Professional Email එක සමඟ PDF එක Attachment එකක් ලෙස යැවීම ---
         try {
             const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-            sendSmtpEmail.subject = "Welcome to EPR System - Account Approved! 🎉";
+            sendSmtpEmail.subject = `Welcome to EPR System - Account Approved! 🎉 (${updatedCustomer.regNumber})`;
             
-            // පට්ටම ලස්සන HTML Design එකක් මෙන්න
+            // ඔයාගේ ලස්සන HTML Design එක මෙතන තියෙනවා
             sendSmtpEmail.htmlContent = `
             <!DOCTYPE html>
             <html>
-            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+            <body style="margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
                     <tr>
                         <td align="center">
-                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #1a1a1a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                            <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #1a1a1a; border-radius: 15px; overflow: hidden;">
                                 <tr>
                                     <td align="center" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding: 40px 20px;">
-                                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 2px;">EPR SYSTEM</h1>
-                                        <p style="color: #e0e0e0; margin-top: 10px;">Your Sustainable Partner</p>
+                                        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">EPR SYSTEM</h1>
+                                        <p style="color: #e0e0e0;">Registration Certificate Attached</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 40px 30px; background-color: #ffffff;">
-                                        <h2 style="color: #2c3e50; margin-top: 0;">Congratulations, ${updatedCustomer.contactPersonName}!</h2>
-                                        <p style="color: #555; line-height: 1.6; font-size: 16px;">
-                                            We are excited to inform you that your registration for <b>${updatedCustomer.companyName}</b> has been officially <b>Approved</b> by our administrator.
-                                        </p>
+                                        <h2 style="color: #2c3e50;">Congratulations, ${updatedCustomer.contactPersonName}!</h2>
+                                        <p style="color: #555;">Your registration for <b>${updatedCustomer.companyName}</b> has been officially approved. We have attached your Official Registration Certificate to this email.</p>
                                         
                                         <div style="background-color: #f9f9f9; border-left: 4px solid #2ecc71; padding: 20px; margin: 30px 0;">
-                                            <p style="margin: 0; color: #333; font-weight: bold; font-size: 14px; text-transform: uppercase;">Your Login Credentials:</p>
-                                            <p style="margin: 10px 0 5px; color: #555;"><b>Username (Email):</b> ${updatedCustomer.officialEmail}</p>
-                                            <p style="margin: 0; color: #555;"><b>Password:</b> <span style="color: #e74c3c;">[The password you provided during registration]</span></p>
+                                            <p style="margin: 0; font-weight: bold;">Login Credentials:</p>
+                                            <p><b>Username:</b> ${updatedCustomer.officialEmail}</p>
+                                            <p><b>Password:</b> [Your provided password]</p>
                                         </div>
 
-                                        <p style="color: #555; line-height: 1.6; font-size: 15px;">
-                                            You can now access your dashboard to manage orders, track sustainability metrics, and more.
-                                        </p>
-
-                                        <div align="center" style="margin-top: 40px;">
-                                            <a href="https://dumidu.vercel.app" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);">Login to Your Dashboard</a>
+                                        <div align="center">
+                                            <a href="https://dumidu.vercel.app" style="background: #2ecc71; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 30px; font-weight: bold;">Login Now</a>
                                         </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding: 20px; background-color: #1a1a1a; color: #777; font-size: 12px;">
-                                        <p>&copy; 2026 EPR System. All Rights Reserved.</p>
-                                        <p>This is an automated message, please do not reply.</p>
                                     </td>
                                 </tr>
                             </table>
@@ -1339,20 +1356,26 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
             sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" };
             sendSmtpEmail.to = [{ "email": updatedCustomer.officialEmail }];
 
+            // මෙන්න Attachment එක එකතු කරන පේළිය 👈
+            sendSmtpEmail.attachment = [{
+                "content": pdfBuffer.toString('base64'),
+                "name": `Certificate_${updatedCustomer.regNumber}.pdf`,
+                "type": "application/pdf"
+            }];
+
             const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
             await apiInstance.sendTransacEmail(sendSmtpEmail);
-            console.log(`✅ Professional Approval email sent to ${updatedCustomer.officialEmail}`);
+            console.log(`✅ Professional Approval email with Certificate sent to ${updatedCustomer.officialEmail}`);
 
         } catch (mailError) {
-            console.error("❌ Failed to send professional email:", mailError);
+            console.error("❌ Email Error:", mailError);
         }
 
-        res.status(200).json({ message: "Customer Approved & Email Sent!", updatedCustomer });
+        res.status(200).json({ message: "Customer Approved & Certificate Sent!", updatedCustomer });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
