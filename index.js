@@ -362,8 +362,13 @@ app.post('/api/customers/forgot-password', async (req, res) => {
         });
 
         res.json({ message: "OTP has been sent to your email!" });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to send email!" });
+} catch (err) {
+        // 🚨 මෙන්න මෙතනට තමයි අර කෑල්ල එන්නේ
+        console.error("❌ Email Sending Error:", err); 
+        res.status(500).json({ 
+            error: "Failed to send email!", 
+            details: err.message 
+        });
     }
 });
 
