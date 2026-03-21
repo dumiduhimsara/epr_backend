@@ -77,19 +77,15 @@ mongoose.connect(mongoURI)
 let otpStore = {}; 
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Port 587 නිසා false විය යුතුයි
+    service: 'gmail', // host සහ port වෙනුවට මේක විතරක් දාන්න
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // අර අකුරු 16 කෝඩ් එක (No spaces)
+        pass: process.env.EMAIL_PASS
     },
     tls: {
-        rejectUnauthorized: false 
-    },
-    connectionTimeout: 10000, // තත්පර 10කින් fail වුණොත් නවත්වන්න
+        rejectUnauthorized: false
+    }
 });
-
 
 // --- MULTER STORAGE SETUP ---
 const storage = multer.diskStorage({
