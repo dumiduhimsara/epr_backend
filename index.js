@@ -1249,34 +1249,43 @@ app.get('/api/admin/customer-stats', async (req, res) => {
     }
 });
 
-// 3. Customer ව Approve කරන Route එක
 app.put('/api/admin/approve-customer/:id', async (req, res) => {
     try {
         const customerId = req.params.id;
+        
+        // Model එක අඳුරගන්න බැරි වෙන එක වළක්වන්න මේ විදිහට ගන්න
         const CustomerModel = mongoose.model('Customer');
         const customer = await CustomerModel.findById(customerId);
         
-        if (!customer) return res.status(404).json({ message: "Customer not found" });
+        if (!customer) {
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
 
-        // Status එක Update කරනවා
+        // 1. Status එක Update කරනවා
         customer.status = 'Approved';
         
-        // Database එකේ දැනටමත් Reg Number එකක් නැත්නම් විතරක් අලුත් එකක් හදනවා
+        // 2. Reg Number එකක් නැත්නම් විතරක් අලුත් එකක් හදනවා
         if (!customer.regNumber) {
-            customer.regNumber = `EPR-${new Date().getFullYear()}-${Math.floor(1000000 + Math.random() * 9000000)}`;
+            const year = new Date().getFullYear();
+            const randomDigits = Math.floor(1000000 + Math.random() * 9000000);
+            customer.regNumber = `EPR-${year}-${randomDigits}`;
         }
         
         await customer.save();
 
-        const frontendURL = "https://dumidu.vercel.app/"; 
-
+        // 3. Email Config (Railway එකේදී Error නොවන්න tls එකතු කර ඇත)
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS 
+            },
+            tls: {
+                rejectUnauthorized: false // මේක Railway වගේ server වලදී අනිවාර්යයි
             }
         });
+
+        const frontendURL = "https://dumidu.vercel.app/"; 
 
         const mailOptions = {
             from: `"EPR Portal Management" <${process.env.EMAIL_USER}>`,
@@ -1303,7 +1312,7 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
                         </div>
 
                         <div style="text-align: center; margin-top: 30px;">
-                            <a href="${frontendURL}" style="background-color: #2ecc71; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);">LOGIN TO DASHBOARD</a>
+                            <a href="${frontendURL}" style="background-color: #2ecc71; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">LOGIN TO DASHBOARD</a>
                         </div>
                     </div>
 
@@ -1324,18 +1333,10 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Approve/Email Error:", error);
+        console.error("Approve/Email Error:", error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-
-
-
-
-
-
-
-
 
 
 const PORT = process.env.PORT || 8080;
