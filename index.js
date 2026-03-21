@@ -70,14 +70,16 @@ mongoose.connect(mongoURI)
 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Port 465 නිසා මේක true වෙන්න ඕනේ
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        pass: process.env.EMAIL_PASS // අර අකුරු 16 කෝඩ් එක (spaces නැතුව Railway එකට දාන්න)
     }
 });
 
-let otpStore = {}; // OTP තාවකාලිකව මතක තියාගන්න මේකත් ඕනේ.............................ok
+let otpStore = {}; 
 
 
 // --- MULTER STORAGE SETUP ---
