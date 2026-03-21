@@ -119,7 +119,7 @@ const uploadInvoice = multer({ storage: invoiceStorage });
 
 const docStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/documents/'); 
+        cb(null, 'documents/'); 
     },
     filename: (req, file, cb) => {
         cb(null, 'DOC-' + Date.now() + '-' + file.originalname);
