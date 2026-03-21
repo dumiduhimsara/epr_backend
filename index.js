@@ -18,12 +18,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-
-// 3. Middlewares
 app.use(express.json());
-app.use(cors());
 
+app.use(cors({
+    origin: ['https://dumidu.vercel.app', 'http://localhost:5173'], // Vercel සහ Local දෙකම allow කරනවා
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
+app.get('/', (req, res) => {
+    res.status(200).send("✅ EPR Backend is Live and Running!");
+});
 // index.js (Backend)
 
 // 🚨 මේක තමයි ටෝකන් එකේ ආරක්ෂාව තහවුරු කරන රහස් කෝඩ් එක (Secret Key)
@@ -68,18 +73,21 @@ mongoose.connect(mongoURI)
   });
 
 
-// --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
+// --- EMAIL CONFIGURATION ---
 let otpStore = {}; 
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Port 587 නිසා false විය යුතුයි
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        pass: process.env.EMAIL_PASS // අර අකුරු 16 කෝඩ් එක (No spaces)
     },
     tls: {
         rejectUnauthorized: false 
-    }
+    },
+    connectionTimeout: 10000, // තත්පර 10කින් fail වුණොත් නවත්වන්න
 });
 
 
