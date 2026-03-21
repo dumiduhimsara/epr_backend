@@ -78,13 +78,13 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS 
     }
 });
-transporter.verify((error, success) => {
+/*transporter.verify((error, success) => {
     if (error) {
         console.log("❌ Email configuration failed, but server is running.");
     } else {
         console.log("📧 Email Server is ready!");
     }
-});
+});*/
 
 
 
