@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import nodemailer from 'nodemailer'; 
+import SibApiV3Sdk from 'sib-api-v3-sdk';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 
@@ -73,21 +73,33 @@ mongoose.connect(mongoURI)
   });
 
 
-// --- EMAIL CONFIGURATION ---
 let otpStore = {}; 
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,             
-    secure: false,        
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false 
+// Brevo API Configuration
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY; // 👈 Railway Variables වල මේ නමම දෙන්න
+
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+// ඊමේල් යවන ෆන්ක්ෂන් එක
+const sendEmail = async (email, otp) => {
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+    sendSmtpEmail.subject = "Your OTP Code - EPR System";
+    sendSmtpEmail.htmlContent = `<html><body><h1>Your OTP is ${otp}</h1><p>This code is valid for 10 minutes.</p></body></html>`;
+    sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" }; // 👈 ඔයා Verify කරපු එක
+    sendSmtpEmail.to = [{ "email": email }];
+
+    try {
+        await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log('✅ Email sent successfully via Brevo API!');
+        return true;
+    } catch (error) {
+        console.error('❌ Brevo API Error:', error);
+        return false;
     }
-});
+};
 
 // --- MULTER STORAGE SETUP ---
 const storage = multer.diskStorage({
