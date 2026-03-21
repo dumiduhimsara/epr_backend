@@ -358,14 +358,14 @@ app.post('/api/customers/forgot-password', async (req, res) => {
 
         res.json({ message: "OTP has been sent to your email!" });
 } catch (err) {
-        // 🚨 මෙන්න මෙතනට තමයි අර කෑල්ල එන්නේ
-        console.error("❌ Email Sending Error:", err); 
+        // 🚨 මෙන්න මේ පේළි දෙක විතරක් වෙනස් කරලා ආයේ Push කරපන්
+        console.log("❌ FULL ERROR DETAILS:", err); 
         res.status(500).json({ 
             error: "Failed to send email!", 
-            details: err.message 
+            debug_message: err.message,
+            stack: err.stack 
         });
     }
-});
 
 
 app.post('/api/customers/verify-otp', (req, res) => {
