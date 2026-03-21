@@ -78,28 +78,29 @@ let otpStore = {};
 // Brevo API Configuration
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY; // 👈 Railway Variables වල මේ නමම දෙන්න
+apiKey.apiKey = process.env.BREVO_API_KEY; 
 
 const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
-// ඊමේල් යවන ෆන්ක්ෂන් එක
+// ඊමේල් යවන පොදු Function එක
 const sendEmail = async (email, otp) => {
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
-    sendSmtpEmail.subject = "Your OTP Code - EPR System";
-    sendSmtpEmail.htmlContent = `<html><body><h1>Your OTP is ${otp}</h1><p>This code is valid for 10 minutes.</p></body></html>`;
-    sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" }; // 👈 ඔයා Verify කරපු එක
+    sendSmtpEmail.subject = "OTP Code - EPR System";
+    sendSmtpEmail.htmlContent = `<html><body><h3>Your OTP code is: <b>${otp}</b></h3><p>This code will expire in 5 minutes.</p></body></html>`;
+    sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" }; // ඔයා Verify කරපු email එක
     sendSmtpEmail.to = [{ "email": email }];
 
     try {
         await apiInstance.sendTransacEmail(sendSmtpEmail);
-        console.log('✅ Email sent successfully via Brevo API!');
+        console.log(`✅ Email sent successfully to ${email}`);
         return true;
     } catch (error) {
         console.error('❌ Brevo API Error:', error);
         return false;
     }
 };
+
 
 // --- MULTER STORAGE SETUP ---
 const storage = multer.diskStorage({
@@ -364,12 +365,9 @@ app.post('/api/customers/forgot-password', async (req, res) => {
         // OTP එක save කරන්නේ Simple Email එකට
         otpStore[lowerEmail] = { otp, expires: Date.now() + 300000 }; 
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: lowerEmail,
-            subject: 'Password Reset OTP',
-            text: `Your OTP code is ${otp}. This code will expire in 5 minutes.`
-        });
+        // මේක විතරක් ඉතුරු කරන්න
+await sendEmail(lowerEmail, otp);
+
 
         res.json({ message: "OTP has been sent to your email!" });
 } catch (err) {
