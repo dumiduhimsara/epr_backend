@@ -22,8 +22,10 @@ const app = express();
 // 3. Middlewares
 app.use(express.json());
 app.use(cors());
+app.get('/', (req, res) => {
+    res.status(200).send("EPR Backend is Up and Running! 🚀");
+});
 
-// index.js (Backend)
 
 // 🚨 මේක තමයි ටෝකන් එකේ ආරක්ෂාව තහවුරු කරන රහස් කෝඩ් එක (Secret Key)
 const JWT_SECRET = process.env.JWT_SECRET || 'EPR_PORTAL_SECURE_2024_@#$';
