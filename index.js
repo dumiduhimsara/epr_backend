@@ -69,18 +69,15 @@ mongoose.connect(mongoURI)
 
 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
-let otpStore = {}; 
-
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false 
     }
 });
+
+let otpStore = {}; // OTP තාවකාලිකව මතක තියාගන්න මේකත් ඕනේ.............................ok
 
 
 // --- MULTER STORAGE SETUP ---
@@ -129,15 +126,6 @@ const adminSchema = new mongoose.Schema({
 });
 const Admin = mongoose.model('Admin', adminSchema);
 
-
-//............................................................................................................................
-// 1. අංක පිළිවෙළට තියාගන්න Counter Model එක
-const counterSchema = new mongoose.Schema({
-    id: { type: String, required: true },
-    seq: { type: Number, default: 0 }
-});
-const Counter = mongoose.model('Counter', counterSchema);
-
 const customerSchema = new mongoose.Schema({
     companyName: { type: String, required: true },
     orgRole: { type: String, required: true },
@@ -153,10 +141,7 @@ const customerSchema = new mongoose.Schema({
     contactPersonMobile: { type: String, required: true },
     dob: { type: String, required: true },
     password: { type: String, required: true },
-    profilePic: { type: String, default: '' },
-    status: { type: String, default: 'Pending' }, // Admin approve කරනකම් Pending
-    regNumber: { type: String, unique: true },    // EPR-2026-0000001 වගේ අංකය
-    registeredAt: { type: Date, default: Date.now }
+    profilePic: { type: String, default: '' }
 });
 const Customer = mongoose.model('Customer', customerSchema);
 
@@ -292,12 +277,6 @@ app.post('/api/login', async (req, res) => {
 
         if (!user) return res.status(400).json({ error: "User not found!" });
 
-        if (role === 'CUSTOMER' && user.status !== 'Approved') {
-            return res.status(403).json({ 
-                error: "Your account is pending approval. Please wait for the admin's confirmation email." 
-            });
-        }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid credentials!" });
 
@@ -315,9 +294,7 @@ app.post('/api/login', async (req, res) => {
                 fullName: user.fullName || user.contactPersonName || user.name, 
                 email: user.email || user.officialEmail, 
                 profilePic: user.profilePic || null,
-                coPartnerId: user.coPartnerId || null,
-                regNumber: user.regNumber || null
-                
+                coPartnerId: user.coPartnerId || null
             } 
         });
     } catch (error) {
@@ -483,53 +460,23 @@ app.post('/api/delete-photo', async (req, res) => {
         res.status(500).json({ error: "Delete failed" });
     }
 });
-//..............................................................................................................................
+
+// 5. Customer Registration
 app.post('/api/customers/register', async (req, res) => {
-    try {
-        const data = req.body;
-
-        // 1. Counter එකෙන් ඊළඟට එන අංකය ලබා ගැනීම (Atomic Update)
-        // මේකෙන් තමයි මිලියන ගණනක් ආවත් අංක පටලැවෙන්නේ නැතුව පිළිවෙළට දෙන්නේ
-        const counter = await Counter.findOneAndUpdate(
-            { id: 'customer_reg' },
-            { $inc: { seq: 1 } },
-            { new: true, upsert: true }
-        );
-
-        // 2. අංකය Format කිරීම (උදා: EPR-2026-0000001)
-        const sequenceStr = counter.seq.toString().padStart(7, '0');
-        const currentYear = new Date().getFullYear();
-        const regNo = `EPR-${currentYear}-${sequenceStr}`;
-
-        // 3. Password එක Hash කිරීම (ඔයාගේ පරණ කෝඩ් එකමයි)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(data.password, salt);
-
-        // 4. අලුත් Customer ව සාදා ගැනීම
-        // මෙතනදී පරණ දත්ත වලට අමතරව regNumber සහ status අපි එකතු කරනවා
-        const newCustomer = new Customer({ 
-            ...data, 
-            password: hashedPassword,
-            regNumber: regNo,       // අලුතින් එක් කළා
-            status: 'Pending'      // අලුතින් එක් කළා (Default)
-        });
-
-        await newCustomer.save();
-
-        console.log(`✅ New Registration: ${regNo}`); // Backend එකේ බලාගන්න
-        
-        res.status(201).json({ 
-            message: "Customer registered successfully! Admin approval pending.",
-            regNumber: regNo 
-        });
-
-    } catch (error) {
-        console.error("❌ Error:", error);
-        res.status(500).json({ error: "Registration failed" });
-    }
+    try {
+        const data = req.body;
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(data.password, salt);
+        const newCustomer = new Customer({ ...data, password: hashedPassword });
+        await newCustomer.save();
+        res.status(201).json({ message: "Customer registered successfully!" });
+    } catch (error) {
+        res.status(500).json({ error: "Registration failed" });
+    }
 });
 
-// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---..............................................................................
+
+// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---
 app.get('/api/user-details/:email', async (req, res) => {
     try {
         const userEmail = req.params.email; // URL එකෙන් ඊමේල් එක ගන්නවා
@@ -1152,6 +1099,7 @@ const zipStorage = multer.diskStorage({
 });
 const uploadZip = multer({ storage: zipStorage });
 
+// index.js එකේ මේක මෙහෙම වෙනස් කරන්න
 // index.js එකේ path එක update-status විදිහට හදමු
 app.put('/api/orders/update-status/:id', async (req, res) => {
     try {
@@ -1219,44 +1167,9 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
     );
     // ...
 });
-
-// Pending ඉන්න අය විතරක් ගන්න Route එක..........................................................................
-// 1. Pending ඉන්න අය විතරක් ගන්න Route එක
-app.get('/api/admin/pending-customers', async (req, res) => {
-    try {
-        // mongoose හරහා කෙලින්ම model එක ලබා ගැනීම (is not defined error එක වැළැක්වීමට)
-        const CustomerModel = mongoose.model('Customer');
-        const pendingList = await CustomerModel.find({ status: 'Pending' });
-        res.status(200).json(pendingList);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 2. Dashboard Stats ගන්න Route එක
-app.get('/api/admin/customer-stats', async (req, res) => {
-    try {
-        const CustomerModel = mongoose.model('Customer');
-        const total = await CustomerModel.countDocuments();
-        const pending = await CustomerModel.countDocuments({ status: 'Pending' });
-        const approved = await CustomerModel.countDocuments({ status: 'Approved' });
-
-        res.status(200).json({
-            total,
-            pending,
-            approved
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`🚀 Server is live on port ${PORT}`);
 
 });
-
 
