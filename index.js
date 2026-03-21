@@ -77,7 +77,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-let otpStore = {}; // OTP තාවකාලිකව මතක තියාගන්න මේකත් ඕනේ.............................ok
+let otpStore = {}; 
 
 
 // --- MULTER STORAGE SETUP ---
@@ -1149,7 +1149,6 @@ const zipStorage = multer.diskStorage({
 });
 const uploadZip = multer({ storage: zipStorage });
 
-// index.js එකේ මේක මෙහෙම වෙනස් කරන්න
 // index.js එකේ path එක update-status විදිහට හදමු
 app.put('/api/orders/update-status/:id', async (req, res) => {
     try {
