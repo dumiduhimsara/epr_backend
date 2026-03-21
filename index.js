@@ -1270,7 +1270,6 @@ app.get('/api/admin/customer-stats', async (req, res) => {
 });
 
 
-// Customer ව Approve කරන අලුත් Route එක
 app.put('/api/admin/approve-customer/:id', async (req, res) => {
     try {
         const CustomerModel = mongoose.model('Customer');
@@ -1281,13 +1280,38 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         );
         
         if (!updatedCustomer) return res.status(404).json({ error: "Customer not found" });
-        
-        res.status(200).json({ message: "Customer Approved Successfully!", updatedCustomer });
+
+        // --- Approve කරපු ගමන් ඊමේල් එකක් යවන කොටස ---
+        try {
+            const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+            sendSmtpEmail.subject = "Account Approved - EPR System";
+            sendSmtpEmail.htmlContent = `
+                <html>
+                    <body>
+                        <h2>Hi ${updatedCustomer.contactPersonName || 'Customer'},</h2>
+                        <p>Great news! Your account at <b>EPR System</b> has been approved by the administrator.</p>
+                        <p>You can now log in to your dashboard using your registered email and password.</p>
+                        <br/>
+                        <a href="https://dumidu.vercel.app" style="padding: 10px 20px; background-color: #2ecc71; color: white; text-decoration: none; border-radius: 5px;">Login Now</a>
+                    </body>
+                </html>`;
+            sendSmtpEmail.sender = { "name": "EPR Admin", "email": "email02emaileeee@gmail.com" };
+            sendSmtpEmail.to = [{ "email": updatedCustomer.officialEmail }];
+
+            const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+            await apiInstance.sendTransacEmail(sendSmtpEmail);
+            console.log(`✅ Approval email sent to ${updatedCustomer.officialEmail}`);
+        } catch (mailError) {
+            console.error("❌ Failed to send approval email:", mailError);
+            // ඊමේල් එක ගියේ නැතත් status එක update වෙලා නිසා error එකක් throw කරන්නේ නැහැ
+        }
+        // -------------------------------------------
+
+        res.status(200).json({ message: "Customer Approved & Email Sent!", updatedCustomer });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 
 const PORT = process.env.PORT || 8080;
