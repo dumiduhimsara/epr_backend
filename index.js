@@ -101,7 +101,7 @@ const sendEmail = async (email, otp) => {
 };
 
 
-// --- MULTER STORAGE SETUP ---
+// --- MULTER STORAGE SETUP ---.................................................................................................
 const storage = multer.diskStorage({
     destination: './uploads/',
     filename: (req, file, cb) => {
@@ -117,7 +117,18 @@ const invoiceStorage = multer.diskStorage({
 });
 const uploadInvoice = multer({ storage: invoiceStorage });
 
-// --- SCHEMAS ---
+const docStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/documents/'); 
+    },
+    filename: (req, file, cb) => {
+        cb(null, 'DOC-' + Date.now() + '-' + file.originalname);
+    }
+});
+
+const uploadDocs = multer({ storage: docStorage });
+
+// --- SCHEMAS ---...........................................................................................................
 
 // Company Schema (QR Management සඳහා)
 const qrCompanySchema = new mongoose.Schema({
@@ -172,9 +183,14 @@ const customerSchema = new mongoose.Schema({
     dob: { type: String, required: true },
     password: { type: String, required: true },
     profilePic: { type: String, default: '' },
-    status: { type: String, default: 'Pending' }, // Admin approve කරනකම් Pending
-    regNumber: { type: String, unique: true },    // EPR-2026-0000001 වගේ අංකය
-    registeredAt: { type: Date, default: Date.now }
+    status: { type: String, default: 'Pending' }, 
+    regNumber: { type: String, unique: true },    
+    registeredAt: { type: Date, default: Date.now },
+
+    verificationDocs: { 
+        type: [String], 
+        default: [] 
+    }
 });
 const Customer = mongoose.model('Customer', customerSchema);
 
@@ -504,9 +520,10 @@ app.post('/api/delete-photo', async (req, res) => {
     }
 });
 //..............................................................................................................................
-app.post('/api/customers/register', async (req, res) => {
-    try {
+app.post('/api/customers/register', uploadDocs.array('documents', 5), async (req, res) => {
+try {
         const data = req.body;
+        const filePaths = req.files ? req.files.map(file => file.path) : [];
 
         const counter = await Counter.findOneAndUpdate(
             { id: 'customer_reg' },
@@ -514,7 +531,6 @@ app.post('/api/customers/register', async (req, res) => {
             { new: true, upsert: true }
         );
 
-        // 2. අංකය Format කිරීම (උදා: EPR-2026-0000001)
         const sequenceStr = counter.seq.toString().padStart(7, '0');
         const currentYear = new Date().getFullYear();
         const regNo = `EPR-${currentYear}-${sequenceStr}`;
@@ -524,12 +540,12 @@ app.post('/api/customers/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
         // 4. අලුත් Customer ව සාදා ගැනීම
-        // මෙතනදී පරණ දත්ත වලට අමතරව regNumber සහ status අපි එකතු කරනවා
         const newCustomer = new Customer({ 
             ...data, 
             password: hashedPassword,
             regNumber: regNo,   
-            status: 'Pending'      
+            status: 'Pending',
+            verificationDocs: filePaths      
         });
 
         await newCustomer.save();
