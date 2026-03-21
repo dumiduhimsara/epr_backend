@@ -453,8 +453,8 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
         // 2. Schema එකේ තියෙන පිරිසිදු නම් වලට දත්ත Update කරනවා
         request.status = 'Collected';
         request.collectedBy = partnerName;
-        request.cpNum = partnerPhone;       // <--- දැන් ෆෝන් නම්බර් එකත් සේව් වෙනවා (Schema එකේ තියෙන විදිහට)
-        request.collectedAt = new Date();   // ස්කෑන් කරපු වෙලාව
+        request.cpNum = partnerPhone;       
+        request.collectedAt = new Date();   
         request.cpId = partnerId; 
 
         // 3. Database එකට Save කරනවා
@@ -509,8 +509,6 @@ app.post('/api/customers/register', async (req, res) => {
     try {
         const data = req.body;
 
-        // 1. Counter එකෙන් ඊළඟට එන අංකය ලබා ගැනීම (Atomic Update)
-        // මේකෙන් තමයි මිලියන ගණනක් ආවත් අංක පටලැවෙන්නේ නැතුව පිළිවෙළට දෙන්නේ
         const counter = await Counter.findOneAndUpdate(
             { id: 'customer_reg' },
             { $inc: { seq: 1 } },
@@ -531,13 +529,13 @@ app.post('/api/customers/register', async (req, res) => {
         const newCustomer = new Customer({ 
             ...data, 
             password: hashedPassword,
-            regNumber: regNo,       // අලුතින් එක් කළා
-            status: 'Pending'      // අලුතින් එක් කළා (Default)
+            regNumber: regNo,   
+            status: 'Pending'      
         });
 
         await newCustomer.save();
 
-        console.log(`✅ New Registration: ${regNo}`); // Backend එකේ බලාගන්න
+        console.log(`✅ New Registration: ${regNo}`); 
         
         res.status(201).json({ 
             message: "Customer registered successfully! Admin approval pending.",
@@ -553,7 +551,7 @@ app.post('/api/customers/register', async (req, res) => {
 // --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---..............................................................................
 app.get('/api/user-details/:email', async (req, res) => {
     try {
-        const userEmail = req.params.email; // URL එකෙන් ඊමේල් එක ගන්නවා
+        const userEmail = req.params.email;
         
         // Database එකේ (Customer model එකේ) ඒ ඊමේල් එක තියෙන කෙනාව හොයනවා
         const user = await Customer.findOne({ officialEmail: userEmail });
@@ -1231,7 +1229,7 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
         { qrId: qrId, status: 'Pending' },
         { 
             status: 'Collected',
-            collectedBy: partnerName, // 👈 Frontend එකෙන් එවන නම මෙතනට වැටෙනවා
+            collectedBy: partnerName, 
             cpId: partnerId,
             cpNum: partnerPhone, 
             collectedAt: new Date()
@@ -1242,7 +1240,6 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
 });
 
 // Pending ඉන්න අය විතරක් ගන්න Route එක..........................................................................
-// 1. Pending ඉන්න අය විතරක් ගන්න Route එක
 app.get('/api/admin/pending-customers', async (req, res) => {
     try {
         // mongoose හරහා කෙලින්ම model එක ලබා ගැනීම (is not defined error එක වැළැක්වීමට)
@@ -1272,6 +1269,24 @@ app.get('/api/admin/customer-stats', async (req, res) => {
     }
 });
 
+
+// Customer ව Approve කරන අලුත් Route එක
+app.put('/api/admin/approve-customer/:id', async (req, res) => {
+    try {
+        const CustomerModel = mongoose.model('Customer');
+        const updatedCustomer = await CustomerModel.findByIdAndUpdate(
+            req.params.id,
+            { status: 'Approved' },
+            { new: true }
+        );
+        
+        if (!updatedCustomer) return res.status(404).json({ error: "Customer not found" });
+        
+        res.status(200).json({ message: "Customer Approved Successfully!", updatedCustomer });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
 
