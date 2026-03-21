@@ -10,7 +10,6 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 
-// 1. Env Config එක (අනිත් හැමදේටම කලින් මේක තියෙන්න ඕනේ)
 dotenv.config();
 
 // 2. ES Module වලට __dirname හදාගන්න එක
@@ -69,6 +68,8 @@ mongoose.connect(mongoURI)
 
 
 // --- EMAIL CONFIGURATION (මෙන්න මේකයි Transporter එක) ---
+let otpStore = {}; 
+
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -78,8 +79,14 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS // අර අකුරු 16 කෝඩ් එක (spaces නැතුව Railway එකට දාන්න)
     }
 });
+transporter.verify((error, success) => {
+    if (error) {
+        console.log("❌ Email Server Error:", error);
+    } else {
+        console.log("📧 Email Server is ready!");
+    }
+});
 
-let otpStore = {}; 
 
 
 // --- MULTER STORAGE SETUP ---
