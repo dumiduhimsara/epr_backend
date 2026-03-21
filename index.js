@@ -1217,12 +1217,6 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
     );
     // ...
 });
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-    console.log(`🚀 Server is live on port ${PORT}`);
-
-});
-
 
 // Pending ඉන්න අය විතරක් ගන්න Route එක..........................................................................
 // 1. Pending ඉන්න අය විතරක් ගන්න Route එක
@@ -1334,3 +1328,20 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+
+
+
+
+
+
+
+
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`🚀 Server is live on port ${PORT}`);
+
+});
+
+
