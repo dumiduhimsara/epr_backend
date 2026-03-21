@@ -366,7 +366,7 @@ app.post('/api/customers/forgot-password', async (req, res) => {
             stack: err.stack 
         });
     }
-
+});
 
 app.post('/api/customers/verify-otp', (req, res) => {
     const { email, otp } = req.body;
