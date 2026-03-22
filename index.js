@@ -29,7 +29,7 @@ if (!fs.existsSync(docDir)) {
 app.use('/documents', express.static(path.join(__dirname, 'documents')));
 
 app.use(cors({
-    origin: ['https://dumidu.vercel.app', 'http://localhost:5173'], // Vercel සහ Local දෙකම allow කරනවා
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
