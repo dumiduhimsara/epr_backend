@@ -163,7 +163,8 @@ const adminSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     adminSecretCode: { type: String, required: true },
     password: { type: String, required: true },
-    profilePic: { type: String, default: '' }
+    profilePic: { type: String, default: '' },
+    adminRole: { type: String, default: 'Admin' }
 });
 const Admin = mongoose.model('Admin', adminSchema);
 
