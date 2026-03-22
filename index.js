@@ -136,6 +136,11 @@ const docStorage = multer.diskStorage({
 });
 
 const uploadDocs = multer({ storage: docStorage });
+const cpUpload = uploadDocs.fields([
+    { name: 'brc', maxCount: 1 },
+    { name: 'vat', maxCount: 1 },
+    { name: 'billing', maxCount: 1 }
+]);
 
 // --- SCHEMAS ---...........................................................................................................
 
@@ -196,6 +201,9 @@ const customerSchema = new mongoose.Schema({
     status: { type: String, default: 'Pending' }, 
     regNumber: { type: String, unique: true },    
     registeredAt: { type: Date, default: Date.now },
+    brcDocument: { type: String, default: '' },
+    vatDocument: { type: String, default: '' },
+    billingDocument: { type: String, default: '' },
 
     verificationDocs: { 
         type: [String], 
@@ -531,10 +539,12 @@ app.post('/api/delete-photo', async (req, res) => {
     }
 });
 //..............................................................................................................................
-app.post('/api/customers/register', uploadDocs.array('documents', 5), async (req, res) => {
+app.post('/api/customers/register', cpUpload, async (req, res) => {
 try {
         const data = req.body;
-        const filePaths = req.files ? req.files.map(file => file.path) : [];
+        const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
+        const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
+        const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
 
         const counter = await Counter.findOneAndUpdate(
             { id: 'customer_reg' },
@@ -556,7 +566,9 @@ try {
             password: hashedPassword,
             regNumber: regNo,   
             status: 'Pending',
-            verificationDocs: filePaths      
+            brcDocument: brcPath,
+            vatDocument: vatPath,
+            billingDocument: billingPath
         });
 
         await newCustomer.save();
