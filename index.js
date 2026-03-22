@@ -360,7 +360,8 @@ app.post('/api/login', async (req, res) => {
                 email: user.email || user.officialEmail, 
                 profilePic: user.profilePic || null,
                 coPartnerId: user.coPartnerId || null,
-                regNumber: user.regNumber || null
+                regNumber: user.regNumber || null,
+                adminRole: user.adminRole
                 
             } 
         });
