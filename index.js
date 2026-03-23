@@ -158,6 +158,7 @@ const qrProductSchema = new mongoose.Schema({
     category: { type: String, required: true },
     brand: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
+
 });
 // මෙන්න මේ පේළියත් අනිවාර්යයි
 const QRProduct = mongoose.model('QRProduct', qrProductSchema);
@@ -172,7 +173,6 @@ const adminSchema = new mongoose.Schema({
     adminRole: { type: String, default: 'Admin' }
 });
 const Admin = mongoose.model('Admin', adminSchema);
-
 
 //............................................................................................................................
 // 1. අංක පිළිවෙළට තියාගන්න Counter Model එක
