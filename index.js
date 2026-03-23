@@ -780,6 +780,33 @@ app.get('/api/get-companies', async (req, res) => {
     }
 });
 
+// 📍 Dashboard එකේ Top 5 පෙන්වන්න විතරක් පාවිච්චි කරන අලුත් API එක
+app.get('/api/dashboard/top-companies', async (req, res) => {
+    try {
+        const topFive = await QRCompany.aggregate([
+            {
+                $lookup: {
+                    from: "qrbatches",
+                    localField: "name",
+                    foreignField: "company",
+                    as: "all_qrs"
+                }
+            },
+            {
+                $addFields: {
+                    qrCount: { $size: "$all_qrs" }
+                }
+            },
+            { $project: { all_qrs: 0 } },
+            { $sort: { qrCount: -1 } },
+            { $limit: 5 } 
+        ]);
+        res.status(200).json(topFive);
+    } catch (error) {
+        res.status(500).json({ error: "Dashboard data fetch failed" });
+    }
+});
+
 // 14. Delete Company
 app.delete('/api/delete-company/:id', async (req, res) => {
     try {
