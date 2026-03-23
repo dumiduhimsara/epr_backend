@@ -1445,6 +1445,18 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
     }
 });
 
+// QR Master Audit Log එකට අවශ්‍ය දත්ත ලබාගැනීම
+app.get('/api/get-all-generated-qrs', async (req, res) => {
+    try {
+        // QRBatch collection එකේ තියෙන ඔක්කොම දත්ත අලුත් එකේ සිට පරණ එකට පිළිවෙළට ගනියි
+        const allGeneratedQRs = await QRBatch.find({}).sort({ createdAt: -1 });
+        res.status(200).json(allGeneratedQRs);
+    } catch (error) {
+        console.error("Error fetching all generated QRs:", error);
+        res.status(500).json({ error: "Failed to fetch QR log" });
+    }
+});
+
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`🚀 Server is live on port ${PORT}`);
