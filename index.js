@@ -148,7 +148,6 @@ const cpUpload = uploadDocs.fields([
 const qrCompanySchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    registrationId: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 // මෙන්න මේ පේළිය අනිවාර්යයි
@@ -1442,18 +1441,6 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         res.status(200).json({ message: "Customer Approved & Certificate Sent!", updatedCustomer });
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
-});
-
-// QR Master Audit Log එකට අවශ්‍ය දත්ත ලබාගැනීම
-app.get('/api/get-all-generated-qrs', async (req, res) => {
-    try {
-        // QRBatch collection එකේ තියෙන ඔක්කොම දත්ත අලුත් එකේ සිට පරණ එකට පිළිවෙළට ගනියි
-        const allGeneratedQRs = await QRBatch.find({}).sort({ createdAt: -1 });
-        res.status(200).json(allGeneratedQRs);
-    } catch (error) {
-        console.error("Error fetching all generated QRs:", error);
-        res.status(500).json({ error: "Failed to fetch QR log" });
     }
 });
 
