@@ -237,6 +237,7 @@ const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 const qrBatchSchema = new mongoose.Schema({
     qrId: { type: String, required: true, unique: true },
     company: String,
+    registrationId: String,
     brand: String,
     product: String,
     serialNumber: String,
@@ -1450,6 +1451,28 @@ app.get('/api/get-all-generated-qrs', async (req, res) => {
     try {
         // QRBatch collection එකේ තියෙන ඔක්කොම දත්ත අලුත් එකේ සිට පරණ එකට පිළිවෙළට ගනියි
         const allGeneratedQRs = await QRBatch.find({}).sort({ createdAt: -1 });
+
+//............................................................................................
+// 2. ඔක්කොම කම්පැනි ලිස්ට් එක ගන්නවා (ID එක Cross-check කරන්න)
+        const companies = await QRCompany.find({}); 
+
+        // 3. දත්ත පිරික්සා පරණ ඒවට ID එක එකතු කරනවා
+        const enrichedData = allGeneratedQRs.map(qr => {
+            const qrObj = qr.toObject();
+            
+            // 🛠️ යම් හෙයකින් registrationId එක ඩේටාබේස් එකේ නැත්නම් (පරණ දත්ත නම්)
+            if (!qrObj.registrationId) {
+                // කම්පැනි මොඩල් එකේ නම සහ QRBatch එකේ කම්පැනි නම ගලපා බලනවා
+                const foundCompany = companies.find(c => c.name === qrObj.company);
+                // හම්බුණොත් ඒකේ ID එක දානවා, නැත්නම් "REG-N/A" දානවා
+                qrObj.registrationId = foundCompany ? foundCompany.registrationId : "REG-N/A";
+            }
+            
+            return qrObj;
+        });
+
+//.............................................................................................
+
         res.status(200).json(allGeneratedQRs);
     } catch (error) {
         console.error("Error fetching all generated QRs:", error);
