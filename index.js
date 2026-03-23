@@ -761,8 +761,8 @@ app.get('/api/orders/all', async (req, res) => {
 // 12. Register Company (QR Management)
 app.post('/api/add-company', async (req, res) => {
     try {
-        const { name, email } = req.body;
-        const newCompany = new QRCompany({ name, email });
+        const { name, email, registrationId } = req.body;
+        const newCompany = new QRCompany({ name, email, registrationId });
         await newCompany.save();
         res.status(201).json({ message: "Company registered successfully!" });
     } catch (error) {
@@ -799,7 +799,7 @@ app.get('/api/dashboard/top-companies', async (req, res) => {
             },
             { $project: { all_qrs: 0 } },
             { $sort: { qrCount: -1 } },
-            { $limit: 5 } // ඩෑෂ්බෝඩ් එකට ඕනේ 5යිනේ, මෙතනින්ම කපලා යවනවා
+            { $limit: 5 } 
         ]);
         res.status(200).json(topFive);
     } catch (error) {
