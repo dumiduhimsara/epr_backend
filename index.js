@@ -1446,7 +1446,26 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
 });
 
 // 🛠️ API එක හරියටම මේ විදිහට තියෙන්න ඕනේ
+app.get('/api/get-all-generated-qrs', async (req, res) => {
+    try {
+        const allGeneratedQRs = await QRBatch.find({}).sort({ createdAt: -1 });
+        const companies = await QRCompany.find({}); 
 
+        const enrichedData = allGeneratedQRs.map(qr => {
+            const qrObj = qr.toObject();
+            if (!qrObj.registrationId) {
+                const foundCompany = companies.find(c => c.name === qrObj.company);
+                qrObj.registrationId = foundCompany ? foundCompany.registrationId : "REG-N/A";
+            }
+            return qrObj;
+        });
+
+        res.status(200).json(enrichedData);
+    } catch (error) {
+        console.error("Error fetching QR log:", error);
+        res.status(500).json({ error: "Failed to fetch data" });
+    }
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
