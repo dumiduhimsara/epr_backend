@@ -766,6 +766,7 @@ app.post('/api/add-company', async (req, res) => {
         await newCompany.save();
         res.status(201).json({ message: "Company registered successfully!" });
     } catch (error) {
+        console.error("Company Save Error:", error);
         res.status(500).json({ error: "Failed to register company" });
     }
 });
