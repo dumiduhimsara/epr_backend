@@ -148,6 +148,7 @@ const cpUpload = uploadDocs.fields([
 const qrCompanySchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    registrationId: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 // මෙන්න මේ පේළිය අනිවාර්යයි
