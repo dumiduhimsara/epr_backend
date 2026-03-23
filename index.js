@@ -158,7 +158,6 @@ const qrProductSchema = new mongoose.Schema({
     category: { type: String, required: true },
     brand: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
-
 });
 // මෙන්න මේ පේළියත් අනිවාර්යයි
 const QRProduct = mongoose.model('QRProduct', qrProductSchema);
@@ -173,6 +172,7 @@ const adminSchema = new mongoose.Schema({
     adminRole: { type: String, default: 'Admin' }
 });
 const Admin = mongoose.model('Admin', adminSchema);
+
 
 //............................................................................................................................
 // 1. අංක පිළිවෙළට තියාගන්න Counter Model එක
@@ -761,12 +761,11 @@ app.get('/api/orders/all', async (req, res) => {
 // 12. Register Company (QR Management)
 app.post('/api/add-company', async (req, res) => {
     try {
-        const { name, email, registrationId } = req.body;
-        const newCompany = new QRCompany({ name, email, registrationId });
+        const { name, email } = req.body;
+        const newCompany = new QRCompany({ name, email });
         await newCompany.save();
         res.status(201).json({ message: "Company registered successfully!" });
     } catch (error) {
-        console.error("Company Save Error:", error);
         res.status(500).json({ error: "Failed to register company" });
     }
 });
@@ -800,7 +799,7 @@ app.get('/api/dashboard/top-companies', async (req, res) => {
             },
             { $project: { all_qrs: 0 } },
             { $sort: { qrCount: -1 } },
-            { $limit: 5 } 
+            { $limit: 5 } // ඩෑෂ්බෝඩ් එකට ඕනේ 5යිනේ, මෙතනින්ම කපලා යවනවා
         ]);
         res.status(200).json(topFive);
     } catch (error) {
