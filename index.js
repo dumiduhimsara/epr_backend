@@ -237,6 +237,7 @@ const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 const qrBatchSchema = new mongoose.Schema({
     qrId: { type: String, required: true, unique: true },
     company: String,
+    registrationId: String,
     brand: String,
     product: String,
     serialNumber: String,
