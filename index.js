@@ -148,6 +148,7 @@ const cpUpload = uploadDocs.fields([
 const qrCompanySchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    registrationId: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 // මෙන්න මේ පේළිය අනිවාර්යයි
@@ -761,11 +762,12 @@ app.get('/api/orders/all', async (req, res) => {
 // 12. Register Company (QR Management)
 app.post('/api/add-company', async (req, res) => {
     try {
-        const { name, email } = req.body;
-        const newCompany = new QRCompany({ name, email });
+        const { name, email, registrationId } = req.body;
+        const newCompany = new QRCompany({ name, email, registrationId });
         await newCompany.save();
         res.status(201).json({ message: "Company registered successfully!" });
     } catch (error) {
+        console.error("Company Save Error:", error);
         res.status(500).json({ error: "Failed to register company" });
     }
 });
