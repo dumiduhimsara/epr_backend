@@ -144,6 +144,8 @@ const cpUpload = uploadDocs.fields([
 
 // --- SCHEMAS ---...........................................................................................................
 
+
+
 // Company Schema (QR Management සඳහා)
 const qrCompanySchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -294,8 +296,65 @@ const recycleRequestSchema = new mongoose.Schema({
 });
 const RecycleRequest = mongoose.model('RecycleRequest', recycleRequestSchema);
 
+// --- FEEDBACK SCHEMA ---
+const feedbackSchema = new mongoose.Schema({
+    user: { type: String, required: true },       // Feedback එක දාන කෙනාගේ නම
+    officialEmail: { type: String },              // පස්සේ කාලෙක යූසර්ව අඳුරගන්න ඊමේල් එක (optional)
+    rating: { type: Number, required: true, min: 1, max: 5 }, // තරු 1-5 දක්වා
+    text: { type: String, required: true },       // Feedback එකේ විස්තරය
+    reply: { type: String, default: "" },         // Admin දෙන පිළිතුර
+    date: { type: Date, default: Date.now }       // Feedback එක දාපු වෙලාව
+});
+const Feedback = mongoose.model('Feedback', feedbackSchema);
+
 //...........................................................................................
 // --- ROUTES ---
+// --- FEEDBACK API ROUTES ---
+
+// 1. හැමෝම දාපු Feedback ටික ගන්න (Read)
+app.get('/api/feedbacks', async (req, res) => {
+    try {
+        const feedbacks = await Feedback.find().sort({ date: -1 });
+        res.status(200).json(feedbacks);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. අලුත් Feedback එකක් සේව් කරන්න (Create)
+app.post('/api/feedbacks', async (req, res) => {
+    try {
+        const newFeedback = new Feedback(req.body);
+        await newFeedback.save();
+        res.status(201).json(newFeedback);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. තමන් දාපු Feedback එකක් Edit කරන්න (Update)
+app.put('/api/feedbacks/:id', async (req, res) => {
+    try {
+        const updated = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.status(200).json(updated);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. Feedback එකක් මකලා දාන්න (Delete)
+app.delete('/api/feedbacks/:id', async (req, res) => {
+    try {
+        await Feedback.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Feedback deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
+
 
 app.post('/api/admin/register', async (req, res) => {
     try {
