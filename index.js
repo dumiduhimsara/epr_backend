@@ -382,16 +382,19 @@ app.post('/api/admin/register', async (req, res) => {
     try {
         const { fullName, email, adminSecretCode, password } = req.body;
 
-        // --- 🔴 මෙන්න මේ කෑල්ල තමයි වැදගත්ම 🔴 ---
-        const SYSTEM_SECRET_CODE = "EPR@2024"; // ඔයා කැමති කෝඩ් එක මෙතන තියෙන්න ඕනේ
+        const SYSTEM_SECRET_CODE = "EPR@2024"; 
 
         if (adminSecretCode !== SYSTEM_SECRET_CODE) {
-            console.log("❌ Invalid Secret Code Attempted!"); // Backend එකේ වැටෙනවා බලන්න
+            console.log("❌ Invalid Secret Code Attempted!"); 
             return res.status(401).json({ error: "Unauthorized! Invalid Admin Secret Code." });
         }
-        // ------------------------------------------
+        const existingInAdmin = await Admin.findOne({ email });
+        const existingInCustomer = await Customer.findOne({ email });
+        const existingInPartner = await CoPartner.findOne({ email });
 
-        // මීට පල්ලෙහායින් තමයි අනිත් ටික එන්න ඕනේ (Bcrypt, Save, etc.)
+        if (existingInAdmin || existingInCustomer || existingInPartner) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
@@ -624,6 +627,20 @@ app.post('/api/delete-photo', async (req, res) => {
 app.post('/api/customers/register', cpUpload, async (req, res) => {
 try {
         const data = req.body;
+
+        const email = data.email;
+
+        // 1. 🛡️ අලුතින් එක් කළ කොටස: ඊමේල් එක කලෙක්ෂන් 3න්ම චෙක් කිරීම
+        // මේකෙන් තමයි එකම මේල් එකෙන් රෝල්ස් කිහිපයකට රෙජිස්ටර් වෙන එක නවත්වන්නේ
+        const existingInAdmin = await Admin.findOne({ email });
+        const existingInCustomer = await Customer.findOne({ email });
+        const existingInPartner = await CoPartner.findOne({ email });
+
+        if (existingInAdmin || existingInCustomer || existingInPartner) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
+
+
         const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
         const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
         const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
@@ -940,6 +957,15 @@ app.delete('/api/delete-product/:id', async (req, res) => {
 app.post('/api/partners/register', async (req, res) => {
     try {
         const { password } = req.body;
+
+const existingInAdmin = await Admin.findOne({ email });
+        const existingInCustomer = await Customer.findOne({ email });
+        const existingInPartner = await CoPartner.findOne({ email });
+
+        if (existingInAdmin || existingInCustomer || existingInPartner) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
+
 
         // 1. අන්තිමටම register වුණු partner ව හොයාගන්න (ID එක generate කරන්න)
         const lastPartner = await CoPartner.findOne().sort({ createdAt: -1 });
