@@ -307,6 +307,28 @@ const feedbackSchema = new mongoose.Schema({
 });
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
+// --- PRODUCT REGISTRATION MODEL ---
+const productSchema = new mongoose.Schema({
+    productType: String,
+    brandName: String,
+    productModel: String,
+    originCountry: String,
+    annualQuantityWeight: Number,
+    annualQuantityUnits: Number,
+    packagingCategory: String,
+    packagingMaterial: String,
+    unitWeight: String,
+    usageType: String,
+    materials: [{ 
+        materialName: String, 
+        percentage: Number 
+    }],
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Product = mongoose.model('Product', productSchema);
+
+
 //...........................................................................................
 // --- ROUTES ---
 // --- FEEDBACK API ROUTES ---
@@ -1501,6 +1523,28 @@ app.put('/api/admin/approve-customer/:id', async (req, res) => {
         res.status(200).json({ message: "Customer Approved & Certificate Sent!", updatedCustomer });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// --- PRODUCT REGISTRATION ROUTE ---
+app.post('/api/products/register', async (req, res) => {
+    try {
+        const productData = req.body;
+        const newProduct = new Product(productData);
+        await newProduct.save();
+
+        console.log("✅ New Product Registered:", newProduct._id);
+        res.status(201).json({ 
+            success: true, 
+            message: 'Product Registered Successfully!',
+            productId: newProduct._id 
+        });
+    } catch (error) {
+        console.error("❌ Registration Error:", error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
 
