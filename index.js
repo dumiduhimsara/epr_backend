@@ -958,13 +958,6 @@ app.post('/api/partners/register', async (req, res) => {
     try {
         const { password } = req.body;
 
-const existingInAdmin = await Admin.findOne({ email });
-        const existingInCustomer = await Customer.findOne({ email });
-        const existingInPartner = await CoPartner.findOne({ email });
-
-        if (existingInAdmin || existingInCustomer || existingInPartner) {
-            return res.status(400).json({ error: "This email is already registered in our system!" });
-        }
 
 
         // 1. අන්තිමටම register වුණු partner ව හොයාගන්න (ID එක generate කරන්න)
