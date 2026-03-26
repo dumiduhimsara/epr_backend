@@ -956,9 +956,16 @@ app.delete('/api/delete-product/:id', async (req, res) => {
 // 18. Add New Co-Partner (Auto-Generate ID version)
 app.post('/api/partners/register', async (req, res) => {
     try {
+
+        const checkEmail = req.body.email;
+        const exists1 = await Admin.findOne({ email: checkEmail });
+        const exists2 = await Customer.findOne({ email: checkEmail });
+        const exists3 = await CoPartner.findOne({ email: checkEmail });
+
+        if (exists1 || exists2 || exists3) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
         const { password } = req.body;
-
-
 
         // 1. අන්තිමටම register වුණු partner ව හොයාගන්න (ID එක generate කරන්න)
         const lastPartner = await CoPartner.findOne().sort({ createdAt: -1 });
