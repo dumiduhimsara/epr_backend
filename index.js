@@ -1577,6 +1577,18 @@ app.post('/api/products/register', async (req, res) => {
     }
 });
 
+// index.js එකට මේක දාන්න (නැත්නම් දාලා තියෙනවද බලන්න)
+app.get('/api/admin/products', async (req, res) => {
+    try {
+        const products = await Product.find().sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch products" });
+    }
+});
+
+
+
 // 🛠️ API එක හරියටම මේ විදිහට තියෙන්න ඕනේ
 app.get('/api/get-all-generated-qrs', async (req, res) => {
     try {
