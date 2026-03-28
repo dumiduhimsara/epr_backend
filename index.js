@@ -382,19 +382,23 @@ app.post('/api/admin/register', async (req, res) => {
     try {
         const { fullName, email, adminSecretCode, password } = req.body;
 
+              // --- 🛡️ EMAIL CROSS-CHECK (අකුරක්වත් වෙනස් නොකර) ---
+        const exists1 = await Admin.findOne({ email: email });
+        const exists2 = await Customer.findOne({ officialEmail: email }); 
+        const exists3 = await CoPartner.findOne({ email: email });
+
+        if (exists1 || exists2 || exists3) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
+        // --------------------------------------------------
+
         const SYSTEM_SECRET_CODE = "EPR@2024"; 
 
         if (adminSecretCode !== SYSTEM_SECRET_CODE) {
             console.log("❌ Invalid Secret Code Attempted!"); 
             return res.status(401).json({ error: "Unauthorized! Invalid Admin Secret Code." });
         }
-        const existingInAdmin = await Admin.findOne({ email });
-        const existingInCustomer = await Customer.findOne({ email });
-        const existingInPartner = await CoPartner.findOne({ email });
-
-        if (existingInAdmin || existingInCustomer || existingInPartner) {
-            return res.status(400).json({ error: "This email is already registered in our system!" });
-        }
+        
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
@@ -628,18 +632,16 @@ app.post('/api/customers/register', cpUpload, async (req, res) => {
 try {
         const data = req.body;
 
-        const email = data.email;
+      const checkEmail = data.officialEmail; 
 
-        // 1. 🛡️ අලුතින් එක් කළ කොටස: ඊමේල් එක කලෙක්ෂන් 3න්ම චෙක් කිරීම
-        // මේකෙන් තමයි එකම මේල් එකෙන් රෝල්ස් කිහිපයකට රෙජිස්ටර් වෙන එක නවත්වන්නේ
-        const existingInAdmin = await Admin.findOne({ email });
-        const existingInCustomer = await Customer.findOne({ email });
-        const existingInPartner = await CoPartner.findOne({ email });
+        const exists1 = await Admin.findOne({ email: checkEmail });
+        const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
+        const exists3 = await CoPartner.findOne({ email: checkEmail });
 
-        if (existingInAdmin || existingInCustomer || existingInPartner) {
+        if (exists1 || exists2 || exists3) {
             return res.status(400).json({ error: "This email is already registered in our system!" });
         }
-
+        // -------------------------------------------------------------------------
 
         const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
         const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
@@ -958,8 +960,9 @@ app.post('/api/partners/register', async (req, res) => {
     try {
 
         const checkEmail = req.body.email;
+
         const exists1 = await Admin.findOne({ email: checkEmail });
-        const exists2 = await Customer.findOne({ email: checkEmail });
+        const exists2 = await Customer.findOne({ officialEmail: checkEmail }); // Schema එකේ නම officialEmail නිසා
         const exists3 = await CoPartner.findOne({ email: checkEmail });
 
         if (exists1 || exists2 || exists3) {
