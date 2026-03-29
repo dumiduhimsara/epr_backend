@@ -37,16 +37,20 @@ app.use(cors({
 app.get('/', (req, res) => {
     res.status(200).send("✅ EPR Backend is Live and Running!");
 });
-// index.js (Backend)
+//................................................................................................................
 
 // 🚨 මේක තමයි ටෝකන් එකේ ආරක්ෂාව තහවුරු කරන රහස් කෝඩ් එක (Secret Key)
-const JWT_SECRET = process.env.JWT_SECRET || 'EPR_PORTAL_SECURE_2024_@#$';
+const JWT_SECRET = process.env.JWT_SECRET; 
 
-// 🛡️ Authentication Middleware
+if (!JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined in environment variables.");
+    process.exit(1);
+}
+// 🛡️ Authentication Middleware..................................................................................................
 // මේකෙන් තමයි ඉදිරියට හැම පේජ් එකකදීම ටෝකන් එක ඇත්තද කියලා චෙක් කරන්නේ
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Header එකෙන් Token එක වෙන් කරගන්නවා
+    const token = authHeader && authHeader.split(' ')[1]; 
 
     if (!token) {
         return res.status(401).json({ error: "Access Denied. No session found." });
@@ -56,7 +60,7 @@ const authenticateToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ error: "Your session has expired. Please login again." });
         }
-        req.user = user; // ටෝකන් එකේ තියෙන විස්තර Request එකට දානවා
+        req.user = user; 
         next();
     });
 };
@@ -141,31 +145,28 @@ const cpUpload = uploadDocs.fields([
     { name: 'vat', maxCount: 1 },
     { name: 'billing', maxCount: 1 }
 ]);
-
-// --- SCHEMAS ---...........................................................................................................
-
-
-
-// Company Schema (QR Management සඳහා)
+//................................................................................................................................
+// --- (SCHEMAS) ---
+// Company Schema (QR Management)
 const qrCompanySchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     registrationId: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
-// මෙන්න මේ පේළිය අනිවාර්යයි
 const QRCompany = mongoose.model('QRCompany', qrCompanySchema);
 
-// Product Schema (QR Management සඳහා)
+
+// Product Schema (QR Management)
 const qrProductSchema = new mongoose.Schema({
     category: { type: String, required: true },
     brand: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
-// මෙන්න මේ පේළියත් අනිවාර්යයි
 const QRProduct = mongoose.model('QRProduct', qrProductSchema);
 
 
+//admin schema
 const adminSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -177,14 +178,15 @@ const adminSchema = new mongoose.Schema({
 const Admin = mongoose.model('Admin', adminSchema);
 
 
-//............................................................................................................................
-// 1. අංක පිළිවෙළට තියාගන්න Counter Model එක
+// Counter schema
 const counterSchema = new mongoose.Schema({
     id: { type: String, required: true },
     seq: { type: Number, default: 0 }
 });
 const Counter = mongoose.model('Counter', counterSchema);
 
+
+//customer schema
 const customerSchema = new mongoose.Schema({
     companyName: { type: String, required: true },
     orgRole: { type: String, required: true },
@@ -216,7 +218,7 @@ const customerSchema = new mongoose.Schema({
 const Customer = mongoose.model('Customer', customerSchema);
 
 
-// 1. Order Schema එක (qrZipFile එකත් එක්ක)
+// Order Schema (qrZipFile)
 const orderSchema = new mongoose.Schema({
     invNum: String,
     company: String,
@@ -231,7 +233,6 @@ const orderSchema = new mongoose.Schema({
     qrZipFile: { type: String, default: null } 
 });
 
-// 2. Model එක (මෙතන 'export' කියන වචනය අයින් කරලා තියෙන්නේ)
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
 
@@ -247,8 +248,8 @@ const qrBatchSchema = new mongoose.Schema({
 });
 const QRBatch = mongoose.model('QRBatch', qrBatchSchema);
 
-// --- QR REGISTRATION SCHEMA---
 
+// QR REGISTRATION SCHEMA
 const qrRegistrationSchema = new mongoose.Schema({
     cuSerial: String,
     cuName: String,
@@ -262,7 +263,7 @@ const qrRegistrationSchema = new mongoose.Schema({
 const QRRegistration = mongoose.model('QRRegistration', qrRegistrationSchema);
 
 
-// --- CO-PARTNER SCHEMA ---
+// CO-PARTNER SCHEMA 
 const coPartnerSchema = new mongoose.Schema({
     coPartnerId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
@@ -277,7 +278,7 @@ phone: { type: String, required: true },
 const CoPartner = mongoose.model('CoPartner', coPartnerSchema);
 
 
-// --- RECYCLE REQUEST SCHEMA ---
+// RECYCLE REQUEST SCHEMA
 const recycleRequestSchema = new mongoose.Schema({
     qrId: { type: String, required: true },
     cuName: String,
@@ -286,28 +287,30 @@ const recycleRequestSchema = new mongoose.Schema({
     cuCompany: String,
     cuProduct: String,
     cuBrand: String,
-    status: { type: String, default: 'Pending' }, // Pending, Collected
-    registeredAt: { type: Date },                 // මුලින්ම Register වුණු දිනය
-    requestedAt: { type: Date, default: Date.now }, // Recycle Request එක දාපු දිනය
-    collectedAt: { type: Date,default: null },                   // Co-partner එකතු කරපු දිනය
-    collectedBy: { type: String, default: null },    // Co-partner ගේ නම
+    status: { type: String, default: 'Pending' }, 
+    registeredAt: { type: Date },                 
+    requestedAt: { type: Date, default: Date.now },
+    collectedAt: { type: Date,default: null },                   
+    collectedBy: { type: String, default: null },    
     cpId: { type: String, default: null },
-    cpNum: { type: String, default: '' }           // Co-partner ගේ ෆෝන් නම්බර් එක
+    cpNum: { type: String, default: '' }          
 });
 const RecycleRequest = mongoose.model('RecycleRequest', recycleRequestSchema);
 
-// --- FEEDBACK SCHEMA ---
+
+//FEEDBACK SCHEMA
 const feedbackSchema = new mongoose.Schema({
-    user: { type: String, required: true },       // Feedback එක දාන කෙනාගේ නම
-    officialEmail: { type: String },              // පස්සේ කාලෙක යූසර්ව අඳුරගන්න ඊමේල් එක (optional)
-    rating: { type: Number, required: true, min: 1, max: 5 }, // තරු 1-5 දක්වා
-    text: { type: String, required: true },       // Feedback එකේ විස්තරය
-    reply: { type: String, default: "" },         // Admin දෙන පිළිතුර
-    date: { type: Date, default: Date.now }       // Feedback එක දාපු වෙලාව
+    user: { type: String, required: true },       
+    officialEmail: { type: String },              
+    rating: { type: Number, required: true, min: 1, max: 5 }, 
+    text: { type: String, required: true },       
+    reply: { type: String, default: "" },         
+    date: { type: Date, default: Date.now }      
 });
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
-// --- PRODUCT REGISTRATION MODEL ---
+
+// PRODUCT REGISTRATION MODEL
 const productSchema = new mongoose.Schema({
     productType: String,
     brandName: String,
@@ -325,15 +328,13 @@ const productSchema = new mongoose.Schema({
     }],
     createdAt: { type: Date, default: Date.now }
 });
-
 const Product = mongoose.model('Product', productSchema);
 
 
-//...........................................................................................
-// --- ROUTES ---
-// --- FEEDBACK API ROUTES ---
+//...................................................................................................................
 
-// 1. හැමෝම දාපු Feedback ටික ගන්න (Read)
+// --- (ROUTES) ---
+// --- FEEDBACK API ROUTES ---
 app.get('/api/feedbacks', async (req, res) => {
     try {
         const feedbacks = await Feedback.find().sort({ date: -1 });
@@ -343,7 +344,7 @@ app.get('/api/feedbacks', async (req, res) => {
     }
 });
 
-// 2. අලුත් Feedback එකක් සේව් කරන්න (Create)
+// 2. Feedback  (Create)
 app.post('/api/feedbacks', async (req, res) => {
     try {
         const newFeedback = new Feedback(req.body);
@@ -354,7 +355,7 @@ app.post('/api/feedbacks', async (req, res) => {
     }
 });
 
-// 3. තමන් දාපු Feedback එකක් Edit කරන්න (Update)
+// 3. Feedback  (Update)
 app.put('/api/feedbacks/:id', async (req, res) => {
     try {
         const updated = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -364,7 +365,7 @@ app.put('/api/feedbacks/:id', async (req, res) => {
     }
 });
 
-// 4. Feedback එකක් මකලා දාන්න (Delete)
+// 4. Feedback (Delete)
 app.delete('/api/feedbacks/:id', async (req, res) => {
     try {
         await Feedback.findByIdAndDelete(req.params.id);
@@ -373,11 +374,9 @@ app.delete('/api/feedbacks/:id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+//............................................................................................................................
 
-
-
-
-
+//admin register
 app.post('/api/admin/register', async (req, res) => {
     try {
         const { fullName, email, adminSecretCode, password } = req.body;
@@ -390,7 +389,6 @@ app.post('/api/admin/register', async (req, res) => {
         if (exists1 || exists2 || exists3) {
             return res.status(400).json({ error: "This email is already registered in our system!" });
         }
-        // --------------------------------------------------
 
         const SYSTEM_SECRET_CODE = "EPR@2024"; 
 
@@ -401,7 +399,6 @@ app.post('/api/admin/register', async (req, res) => {
         
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        
         const newAdmin = new Admin({ fullName, email, adminSecretCode, password: hashedPassword });
         await newAdmin.save();
         
@@ -411,9 +408,65 @@ app.post('/api/admin/register', async (req, res) => {
     }
 });
 
+//customer registration
+app.post('/api/customers/register', cpUpload, async (req, res) => {
+try {
+        const data = req.body;
+
+      const checkEmail = data.officialEmail; 
+
+        const exists1 = await Admin.findOne({ email: checkEmail });
+        const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
+        const exists3 = await CoPartner.findOne({ email: checkEmail });
+
+        if (exists1 || exists2 || exists3) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
+
+        const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
+        const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
+        const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
+
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'customer_reg' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+
+        const sequenceStr = counter.seq.toString().padStart(7, '0');
+        const currentYear = new Date().getFullYear();
+        const regNo = `EPR-${currentYear}-${sequenceStr}`;
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(data.password, salt);
+
+        const newCustomer = new Customer({ 
+            ...data, 
+            password: hashedPassword,
+            regNumber: regNo,   
+            status: 'Pending',
+            brcDocument: brcPath,
+            vatDocument: vatPath,
+            billingDocument: billingPath
+        });
+
+        await newCustomer.save();
+
+        console.log(`✅ New Registration: ${regNo}`); 
+        
+        res.status(201).json({ 
+            message: "Customer registered successfully! Admin approval pending.",
+            regNumber: regNo 
+        });
+
+    } catch (error) {
+        console.error("❌ Error:", error);
+        res.status(500).json({ error: "Registration failed" });
+    }
+});
 
 
-// --- 2. UNIFIED LOGIN (Admin, Customer & Partner) ---.................................................................
+// UNIFIED LOGIN (Admin, Customer & Partner) login
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -466,14 +519,14 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: "Server error during login" });
     }
 });
-//...........................................................................................................................
 
+
+//customer forgot password
 app.post('/api/customers/forgot-password', async (req, res) => {
     const { email } = req.body;
     const lowerEmail = email.toLowerCase().trim(); // Email එක පිරිසිදු කරගන්නවා
 
     try {
-        // Partner ව මෙතන චෙක් කරන්නේ නැහැ, ඒ නිසා එයාට Reset කරන්න බැහැ
         let user = await Admin.findOne({ email: lowerEmail });
         if (!user) {
             user = await Customer.findOne({ officialEmail: lowerEmail });
@@ -485,16 +538,12 @@ app.post('/api/customers/forgot-password', async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // OTP එක save කරන්නේ Simple Email එකට
         otpStore[lowerEmail] = { otp, expires: Date.now() + 300000 }; 
 
-        // මේක විතරක් ඉතුරු කරන්න
 await sendEmail(lowerEmail, otp);
-
 
         res.json({ message: "OTP has been sent to your email!" });
 } catch (err) {
-        // 🚨 මෙන්න මේ පේළි දෙක විතරක් වෙනස් කරලා ආයේ Push කරපන්
         console.log("❌ FULL ERROR DETAILS:", err); 
         res.status(500).json({ 
             error: "Failed to send email!", 
@@ -504,12 +553,13 @@ await sendEmail(lowerEmail, otp);
     }
 });
 
+
+//customer verify OTP
 app.post('/api/customers/verify-otp', (req, res) => {
     const { email, otp } = req.body;
     const lowerEmail = email.toLowerCase().trim();
     const data = otpStore[lowerEmail];
 
-    // OTP එකයි වෙලාවයි දෙකම බලනවා
     if (data && data.otp.toString() === otp.toString() && data.expires > Date.now()) {
         res.json({ success: true, message: "OTP verified! Now you can set a new password." });
     } else {
@@ -517,7 +567,7 @@ app.post('/api/customers/verify-otp', (req, res) => {
     }
 });
 
-
+//customer reset password
 app.post('/api/customers/reset-password', async (req, res) => {
     const { email, newPassword } = req.body;
     const lowerEmail = email.toLowerCase().trim();
@@ -526,13 +576,11 @@ app.post('/api/customers/reset-password', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // 1. මුලින්ම Admin collection එකේ update කරමු
         let user = await Admin.findOneAndUpdate(
             { email: lowerEmail }, 
             { password: hashedPassword }
         );
 
-        // 2. Admin කෙනෙක් නෙමෙයි නම් Customer collection එකේ update කරමු
         if (!user) {
             user = await Customer.findOneAndUpdate(
                 { officialEmail: lowerEmail }, 
@@ -544,7 +592,7 @@ app.post('/api/customers/reset-password', async (req, res) => {
             return res.status(404).json({ error: "User not found!" });
         }
         
-        delete otpStore[lowerEmail]; // පාවිච්චි කරපු OTP එක අයින් කරනවා
+        delete otpStore[lowerEmail]; 
         res.json({ success: true, message: "Password updated successfully!" });
 
     } catch (err) {
@@ -552,15 +600,12 @@ app.post('/api/customers/reset-password', async (req, res) => {
     }
 });
 
-// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+//partner confirm collection
 app.post('/api/partner/confirm-collection', async (req, res) => {
     try {
-        // 1. Frontend එකෙන් එවන ඔක්කොම දත්ත ටික මෙතනින් ගන්නවා
         const { qrId, partnerId, partnerName, partnerPhone } = req.body;
 
-        // QR ID එකෙන් අදාළ රික්වෙස්ට් එක හොයාගන්නවා
         const request = await RecycleRequest.findOne({ 
             qrId: qrId.trim(), 
             status: 'Pending' 
@@ -573,14 +618,12 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
             });
         }
 
-        // 2. Schema එකේ තියෙන පිරිසිදු නම් වලට දත්ත Update කරනවා
         request.status = 'Collected';
         request.collectedBy = partnerName;
         request.cpNum = partnerPhone;       
         request.collectedAt = new Date();   
         request.cpId = partnerId; 
 
-        // 3. Database එකට Save කරනවා
         await request.save();
 
         res.json({ 
@@ -592,16 +635,17 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
         console.error("Update Error:", err);
         res.status(500).json({ success: false, error: "Server Error" });
     }
-});///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+});
+//..............................................................................................................................
 
 
-
-// 3. Photo Upload
+// Photo Upload
 app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
     try {
         const { email, role } = req.body;
        
-        const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+       const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 8080}`;
+        const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
         if (role === 'admin') {
             await Admin.findOneAndUpdate({ email }, { profilePic: imageUrl });
         } else {
@@ -613,7 +657,8 @@ app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
     }
 });
 
-// 4. Photo Delete
+
+//  Photo Delete
 app.post('/api/delete-photo', async (req, res) => {
     try {
         const { email, role } = req.body;
@@ -627,69 +672,14 @@ app.post('/api/delete-photo', async (req, res) => {
         res.status(500).json({ error: "Delete failed" });
     }
 });
-//..............................................................................................................................
-app.post('/api/customers/register', cpUpload, async (req, res) => {
-try {
-        const data = req.body;
 
-      const checkEmail = data.officialEmail; 
 
-        const exists1 = await Admin.findOne({ email: checkEmail });
-        const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
-        const exists3 = await CoPartner.findOne({ email: checkEmail });
 
-        if (exists1 || exists2 || exists3) {
-            return res.status(400).json({ error: "This email is already registered in our system!" });
-        }
-        // -------------------------------------------------------------------------
 
-        const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
-        const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
-        const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
-
-        const counter = await Counter.findOneAndUpdate(
-            { id: 'customer_reg' },
-            { $inc: { seq: 1 } },
-            { new: true, upsert: true }
-        );
-
-        const sequenceStr = counter.seq.toString().padStart(7, '0');
-        const currentYear = new Date().getFullYear();
-        const regNo = `EPR-${currentYear}-${sequenceStr}`;
-
-        // 3. Password එක Hash කිරීම (ඔයාගේ පරණ කෝඩ් එකමයි)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(data.password, salt);
-
-        // 4. අලුත් Customer ව සාදා ගැනීම
-        const newCustomer = new Customer({ 
-            ...data, 
-            password: hashedPassword,
-            regNumber: regNo,   
-            status: 'Pending',
-            brcDocument: brcPath,
-            vatDocument: vatPath,
-            billingDocument: billingPath
-        });
-
-        await newCustomer.save();
-
-        console.log(`✅ New Registration: ${regNo}`); 
-        
-        res.status(201).json({ 
-            message: "Customer registered successfully! Admin approval pending.",
-            regNumber: regNo 
-        });
-
-    } catch (error) {
-        console.error("❌ Error:", error);
-        res.status(500).json({ error: "Registration failed" });
-    }
-});
-
-// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක ---..............................................................................
+// --- ලොග් වෙලා ඉන්න යූසර්ගේ දත්ත ලබාගැනීමේ API එක .
 app.get('/api/user-details/:email', async (req, res) => {
     try {
+
         const userEmail = req.params.email;
         
         // Database එකේ (Customer model එකේ) ඒ ඊමේල් එක තියෙන කෙනාව හොයනවා
