@@ -10,6 +10,8 @@ import SibApiV3Sdk from 'sib-api-v3-sdk';
 import PDFDocument from 'pdfkit';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 dotenv.config();
 
@@ -117,12 +119,24 @@ const sendEmail = async (email, otp) => {
 
 
 // --- MULTER STORAGE SETUP ---.................................................................................................
-const storage = multer.diskStorage({
+/*const storage = multer.diskStorage({
     destination: './uploads/',
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
+}); */
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'user_profiles',
+        allowed_formats: ['jpg', 'png', 'jpeg'],
+        public_id: (req, file) => 'profile-' + Date.now(),
+    },
 });
+
+
+
 const upload = multer({ storage });
 const invoiceStorage = multer.diskStorage({
     destination: './invoices/',
@@ -130,6 +144,8 @@ const invoiceStorage = multer.diskStorage({
         cb(null, 'inv-' + Date.now() + path.extname(file.originalname));
     }
 });
+
+
 const uploadInvoice = multer({ storage: invoiceStorage });
 
 const docStorage = multer.diskStorage({
@@ -643,7 +659,7 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
 
 
 // Photo Upload
-app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
+/* app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
     try {
         const { email, role } = req.body;
        
@@ -658,6 +674,30 @@ app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Upload failed" });
     }
+});
+
+*/
+// Photo Upload (Cloudinary Version)
+app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
+    try {
+        const { email, role } = req.body;
+        
+        // 🚨 පරණ baseUrl සහ imageUrl පේළි දෙකම අයින් කරන්න.
+        // 🔥 දැන් Cloudinary පාවිච්චි කරද්දී req.file.path එකේ එන්නේ සම්පූර්ණ URL එකයි.
+        const imageUrl = req.file.path; 
+
+        if (role === 'admin') {
+            await Admin.findOneAndUpdate({ email }, { profilePic: imageUrl });
+        } else {
+            await Customer.findOneAndUpdate({ officialEmail: email }, { profilePic: imageUrl });
+        }
+
+        // Database එකේ සේව් වෙන්නේ https://res.cloudinary.com/... වගේ ලින්ක් එකක්
+        res.status(200).json({ imageUrl });
+    } catch (error) {
+        console.error("Cloudinary Error:", error);
+        res.status(500).json({ error: "Upload failed" });
+    }
 });
 
 
