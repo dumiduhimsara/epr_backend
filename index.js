@@ -20,9 +20,7 @@ const app = express();
 app.use(cors({
   origin: [
         'https://dumidu.vercel.app', 
-        'http://localhost:3000', 
         'http://localhost:5173', 
-        'http://localhost:5176'  
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
