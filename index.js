@@ -1384,7 +1384,7 @@ app.put('/api/orders/update-status/:id', async (req, res) => {
     }
 });
 
-app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async (async (req, res) => {
+app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).send('No file uploaded.');
 
@@ -1405,7 +1405,7 @@ app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async (async
         console.error("❌ Upload Error:", error);
         res.status(500).json({ error: error.message });
     }
-}));
+});
 
 
 // index.js (Backend)
