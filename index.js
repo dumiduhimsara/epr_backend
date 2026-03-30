@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({
-    origin: ['https://dumidu.vercel.app', 'http://localhost:5176'], 
+    origin: ['https://dumidu.vercel.app', 'http://localhost:5173'], 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
