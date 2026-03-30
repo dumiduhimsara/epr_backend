@@ -17,6 +17,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(cors({
+    origin: ['https://dumidu.vercel.app', 'http://localhost:5176'], 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 app.use(express.json());
 
 const docDir = './documents';
@@ -28,11 +33,6 @@ if (!fs.existsSync(docDir)) {
 // 2. Upload කරන ෆයිල්ස් පස්සේ කාලෙක Browser එකෙන් බලන්න පුළුවන් වෙන්න අවසර දීම (Static Route)
 app.use('/documents', express.static(path.join(__dirname, 'documents')));
 
-app.use(cors({
-    origin: ['https://dumidu.vercel.app', 'http://localhost:5173'], // Vercel සහ Local දෙකම allow කරනවා
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-}));
 
 app.get('/', (req, res) => {
     res.status(200).send("✅ EPR Backend is Live and Running!");
@@ -497,7 +497,8 @@ app.post('/api/login', async (req, res) => {
 
         const token = jwt.sign(
             { id: user._id, role: role }, 
-            process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026', 
+           // process.env.JWT_SECRET || 'EPR_SUPER_SECRET_2026', 
+           JWT_SECRET,
             { expiresIn: '1d' } 
         );
 
