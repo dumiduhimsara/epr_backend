@@ -118,19 +118,14 @@ const sendEmail = async (email, otp) => {
 };
 
 
-// --- MULTER STORAGE SETUP ---.................................................................................................
-/*const storage = multer.diskStorage({
-    destination: './uploads/',
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-}); */
+// --- uploadcloudinary STORAGE SETUP ---.................................................................................................
 cloudinary.config({
   cloud_name: 'de2uxpvdz',
   api_key: '362669515799133',
   api_secret: 'BitZ3Bk0EqyFGocmYuwE1nP1gBw'
 });
 
+// --- PROFILE PICTURE STORAGE ---
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -140,34 +135,48 @@ const storage = new CloudinaryStorage({
     },
 });
 
+const upload = multer({ storage }); 
 
-
-const upload = multer({ storage });
-const invoiceStorage = multer.diskStorage({
-    destination: './invoices/',
-    filename: (req, file, cb) => {
-        cb(null, 'inv-' + Date.now() + path.extname(file.originalname));
-    }
-});
-
-
-const uploadInvoice = multer({ storage: invoiceStorage });
-
-const docStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'documents/'); 
+// --- 1. INVOICE CLOUDINARY STORAGE SETUP ---
+const invoiceCloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'invoices', 
+        allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'], 
+        public_id: (req, file) => 'inv-' + Date.now(),
     },
-    filename: (req, file, cb) => {
-        cb(null, 'DOC-' + Date.now() + '-' + file.originalname);
-    }
 });
 
-const uploadDocs = multer({ storage: docStorage });
+const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });
+
+
+// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---
+const docCloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'customer_documents', 
+        allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'],
+        public_id: (req, file) => 'DOC-' + Date.now() + '-' + file.originalname.split('.')[0],
+    },
+});
+const uploadDocs = multer({ storage: docCloudinaryStorage });
 const cpUpload = uploadDocs.fields([
     { name: 'brc', maxCount: 1 },
     { name: 'vat', maxCount: 1 },
     { name: 'billing', maxCount: 1 }
 ]);
+
+// --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---
+const zipCloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'qr_zips', 
+        resource_type: 'raw', // ZIP ෆයිල් නිසා මේක අනිවාර්යයි
+        public_id: (req, file) => 'ZIP-' + Date.now() + '-' + file.originalname.split('.')[0],
+    },
+});
+
+const uploadZip = multer({ storage: zipCloudinaryStorage });
 //................................................................................................................................
 // --- (SCHEMAS) ---
 // Company Schema (QR Management)
@@ -664,24 +673,7 @@ app.post('/api/partner/confirm-collection', async (req, res) => {
 
 
 // Photo Upload
-/* app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
-    try {
-        const { email, role } = req.body;
-       
-       const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 8080}`;
-        const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-        if (role === 'admin') {
-            await Admin.findOneAndUpdate({ email }, { profilePic: imageUrl });
-        } else {
-            await Customer.findOneAndUpdate({ officialEmail: email }, { profilePic: imageUrl });
-        }
-        res.status(200).json({ imageUrl });
-    } catch (error) {
-        res.status(500).json({ error: "Upload failed" });
-    }
-});
 
-*/
 // Photo Upload (Cloudinary Version)
 app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
     try {
@@ -697,7 +689,6 @@ app.post('/api/upload-photo', upload.single('image'), async (req, res) => {
             await Customer.findOneAndUpdate({ officialEmail: email }, { profilePic: imageUrl });
         }
 
-        // Database එකේ සේව් වෙන්නේ https://res.cloudinary.com/... වගේ ලින්ක් එකක්
         res.status(200).json({ imageUrl });
     } catch (error) {
         console.error("Cloudinary Error:", error);
@@ -730,14 +721,12 @@ app.get('/api/user-details/:email', async (req, res) => {
 
         const userEmail = req.params.email;
         
-        // Database එකේ (Customer model එකේ) ඒ ඊමේල් එක තියෙන කෙනාව හොයනවා
         const user = await Customer.findOne({ officialEmail: userEmail });
 
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // මුලින්ම password එක අයින් කරලා ඉතිරි දත්ත ටික විතරක් යවනවා (Security එකට)
         const { password, ...userData } = user._doc;
         
         res.status(200).json({ user: userData });
@@ -757,11 +746,10 @@ app.put('/api/user-details/update/:email', async (req, res) => {
         const userEmail = req.params.email;
         const updatedData = req.body; // Frontend එකෙන් එවන අලුත් දත්ත
 
-        // Email එක අනුව යූසර්ව හොයාගෙන අලුත් දත්ත ටික Update කරනවා
         const updatedUser = await Customer.findOneAndUpdate(
             { officialEmail: userEmail },
             { $set: updatedData },
-            { new: true } // Update වුණු අලුත් දත්ත ටිකම ආපහු එවන්න කියලා කියනවා
+            { new: true } 
         );
 
         if (!updatedUser) {
@@ -1351,7 +1339,7 @@ app.post('/api/save-qr', async (req, res) => {
 // --- ORDER STATUS UPDATE ROUTE (ADMIN පාවිච්චි කරන එක) ---
 app.put('/api/orders/update/:id', async (req, res) => {
     try {
-        const { status } = req.body; // Frontend එකෙන් එවන Status එක (Approved / QR Sent)
+        const { status } = req.body; 
         const orderId = req.params.id;
 
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -1373,18 +1361,6 @@ app.put('/api/orders/update/:id', async (req, res) => {
     }
 });
   
-// ZIP files save කරන්න folder එකක් හදනවා
-const zipStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = 'uploads/qrzips';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-const uploadZip = multer({ storage: zipStorage });
 
 // index.js එකේ path එක update-status විදිහට හදමු
 app.put('/api/orders/update-status/:id', async (req, res) => {
@@ -1408,32 +1384,28 @@ app.put('/api/orders/update-status/:id', async (req, res) => {
     }
 });
 
-app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async (req, res) => {
+app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async (async (req, res) => {
     try {
         if (!req.file) return res.status(400).send('No file uploaded.');
 
         const orderId = req.params.id;
-        
-        // 🚨 මෙන්න මේ පේළිය තමයි වැදගත්ම! 
-        // අපි ලස්සනට path එක හදාගන්නවා database එකේ save කරන්න
-        const zipPath = req.file.path.replace(/\\/g, '/'); 
+        const zipPath = req.file.path; 
 
         const updatedOrder = await Order.findByIdAndUpdate(
             orderId,
             { 
                 status: 'QR Sent', 
-                qrZipFile: zipPath  // 👈 මෙන්න මේක දැන් හරියට save වෙයි
+                qrZipFile: zipPath 
             },
             { new: true }
         );
-
-        console.log("✅ ZIP Path Saved:", zipPath);
-        res.status(200).json({ message: 'ZIP Uploaded successfully!', updatedOrder });
+        console.log("✅ Cloudinary ZIP URL Saved:", zipPath);
+        res.status(200).json({ message: 'ZIP Uploaded to Cloudinary successfully!', updatedOrder });
     } catch (error) {
         console.error("❌ Upload Error:", error);
         res.status(500).json({ error: error.message });
     }
-});
+}));
 
 
 // index.js (Backend)
