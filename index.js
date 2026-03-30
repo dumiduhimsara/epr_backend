@@ -29,7 +29,7 @@ if (!fs.existsSync(docDir)) {
     fs.mkdirSync(docDir, { recursive: true });
     console.log("✅ Created 'documents' directory automatically!");
 }
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 2. Upload කරන ෆයිල්ස් පස්සේ කාලෙක Browser එකෙන් බලන්න පුළුවන් වෙන්න අවසර දීම (Static Route)
 app.use('/documents', express.static(path.join(__dirname, 'documents')));
 
