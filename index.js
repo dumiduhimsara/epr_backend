@@ -18,7 +18,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({
-    origin: ['https://dumidu.vercel.app', 'http://localhost:5173'], 
+  origin: [
+        'https://dumidu.vercel.app', 
+        'http://localhost:3000', 
+        'http://localhost:5173', 
+        'http://localhost:5176'  
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -30,7 +35,6 @@ if (!fs.existsSync(docDir)) {
     console.log("✅ Created 'documents' directory automatically!");
 }
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// 2. Upload කරන ෆයිල්ස් පස්සේ කාලෙක Browser එකෙන් බලන්න පුළුවන් වෙන්න අවසර දීම (Static Route)
 app.use('/documents', express.static(path.join(__dirname, 'documents')));
 
 
