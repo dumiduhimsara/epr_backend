@@ -125,6 +125,11 @@ const sendEmail = async (email, otp) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 }); */
+cloudinary.config({
+  cloud_name: 'de2uxpvdz',
+  api_key: '362669515799133',
+  api_secret: 'BitZ3Bk0EqyFGocmYuwE1nP1gBw'
+});
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
