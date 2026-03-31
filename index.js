@@ -904,37 +904,25 @@ app.delete('/api/customer/:id', async (req, res) => {
 });   */
 
 
-// ✅ 1. 'uploadInvoice.single' කෑල්ල අයින් කළා (දැන් Multer ඕනේ නැහැ)
+// ✅ Multer (uploadInvoice.single) අයින් කරලා තියෙන්න ඕනේ
 app.post('/api/orders/create', async (req, res) => {
     try {
-        // ✅ 2. දැන් 'invoiceFile' කියන String එක කෙලින්ම req.body එකෙන් ලැබෙනවා
+        // req.body එකෙන් කෙලින්ම String එක ගන්නවා
         const { invNum, company, role, division, orderType, officialEmail, invoiceFile } = req.body;
         
         const newOrder = new Order({
-            invNum,
-            company,
-            role,
-            division,  
-            orderType,
-            officialEmail: officialEmail, 
-            // ✅ 3. මෙතනට එන්නේ Frontend එකේ FileReader එකෙන් එවපු අකුරු වැල (Base64)
-            invoiceFile: invoiceFile, 
+            invNum, company, role, division, orderType, officialEmail,
+            invoiceFile: invoiceFile, // ✅ මෙතනට එන්නේ String එක
             createdAt: new Date() 
         });
 
         await newOrder.save();
-
-        res.status(201).json({ 
-            message: "Order placed successfully!", 
-            order: newOrder 
-        });
-
+        res.status(201).json({ message: "Order placed successfully!", order: newOrder });
     } catch (error) {
         console.error("Order Creation Error:", error);
         res.status(500).json({ error: "Order failed to save" });
     }
 });
-
 
 
 
