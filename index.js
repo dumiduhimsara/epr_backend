@@ -160,6 +160,7 @@ const invoiceCloudinaryStorage = new CloudinaryStorage({
         type: 'upload',
         access_mode: 'public', 
         public_id: (req, file) => 'inv-' + Date.now(),
+        format: 'pdf',
     },
 });
 
