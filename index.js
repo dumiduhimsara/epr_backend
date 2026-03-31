@@ -881,17 +881,17 @@ app.post('/api/orders/create', uploadInvoice.single('invoice'), async (req, res)
             role,
             division,  
             orderType,
-            officialEmail: officialEmail, // User ගේ email එක save කිරීම
-            invoiceFile: req.file ? req.file.filename : '',
+            officialEmail: officialEmail, 
+
+          //  invoiceFile: req.file ? req.file.filename : '',
+
+          invoiceFile: req.file ? req.file.path : '',
             
-            // 2. 🔥 Date සහ Time එකතු කිරීම
             createdAt: new Date() 
         });
 
-        // 3. Database එකට save කිරීම
         await newOrder.save();
 
-        // 4. සාර්ථක පණිවිඩය සහ අලුත් order එකේ දත්ත යැවීම
         res.status(201).json({ 
             message: "Order placed successfully!", 
             order: newOrder 
