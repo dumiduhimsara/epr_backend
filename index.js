@@ -12,7 +12,6 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import axios from 'axios'; 
 
 dotenv.config();
 
@@ -1649,47 +1648,6 @@ app.get('/api/get-all-generated-qrs', async (req, res) => {
         res.status(500).json({ error: "Failed to fetch data" });
     }
 });
-
-
-
-
-
-
-
-
-const axios = require('axios');
-
-app.get('/api/orders/download-invoice', async (req, res) => {
-    const { url, fileName } = req.query;
-    try {
-        const response = await axios({
-            url: url,
-            method: 'GET',
-            responseType: 'stream'
-        });
-
-        // නිවැරදිව PDF එකක් බව හඳුන්වා දෙනවා
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=${fileName || 'invoice'}.pdf`);
-        
-        response.data.pipe(res);
-    } catch (error) {
-        res.status(500).send('Download failed');
-    }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
