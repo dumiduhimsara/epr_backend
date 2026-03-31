@@ -156,7 +156,7 @@ const docCloudinaryStorage = new CloudinaryStorage({
     params: {
         folder: 'customer_documents', 
         allowed_formats: [ 'pdf', 'jpg', 'png', 'jpeg'],
-        resource_type: 'auto', 
+        resource_type: 'raw', 
         type: 'upload',
         public_id: (req, file) => 'DOC-' + Date.now() + '-' + file.originalname.split('.')[0],
     },
