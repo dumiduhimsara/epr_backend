@@ -159,8 +159,9 @@ const invoiceCloudinaryStorage = new CloudinaryStorage({
         resource_type: 'raw', 
         type: 'upload',
         access_mode: 'public', 
-        public_id: (req, file) => 'inv-' + Date.now(),
-        format: 'pdf',
+        // 🔥 මෙන්න මේ පේළිය අනිවාර්යයෙන්ම මේ විදිහටම ලියන්න. 
+        // අගට '.pdf' කෑල්ල එකතු කිරීමෙන් තමයි බ්‍රවුසරය මේක හඳුනා ගන්නේ.
+        public_id: (req, file) => `inv-${Date.now()}.pdf`,
     },
 });
 
