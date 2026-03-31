@@ -156,9 +156,9 @@ const docCloudinaryStorage = new CloudinaryStorage({
     params: {
         folder: 'customer_documents', 
         allowed_formats: ['pdf', 'jpg', 'png', 'jpeg'],
-        resource_type: 'auto', 
+        // ❌ resource_type: 'auto' වෙනුවට පල්ලෙහා තියෙන එකම දාන්න
+        resource_type: 'raw', // 🔥 PDF වලට resource_type එක අනිවාර්යයෙන්ම 'raw' විය යුතුයි
         type: 'upload',
-        // 🔥 මේ පේළිය අනිවාර්යයෙන්ම එක් කරන්න. එතකොටයි 401 Error එක නැති වෙන්නේ.
         access_mode: 'public', 
         public_id: (req, file) => 'DOC-' + Date.now() + '-' + file.originalname.split('.')[0],
     },
