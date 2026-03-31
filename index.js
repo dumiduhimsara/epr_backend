@@ -155,14 +155,11 @@ const invoiceCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'invoices', 
-        allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'], 
-        // 🔥 1. මේ දෙක අනිවාර්යයෙන්ම දාන්න. එතකොටයි Permission ප්‍රශ්න නැති වෙන්නේ.
-        resource_type: 'auto', 
+        allowed_formats: ['pdf', 'jpg', 'png', 'jpeg'],
+        resource_type: 'raw', 
+        type: 'upload',
         access_mode: 'public', 
-        
-        // 🔥 2. පීඩීඑෆ් එකට අගට .pdf කෑල්ල අනිවාර්යයෙන්ම වැටෙන්න මේක මෙහෙම හදන්න.
         public_id: (req, file) => 'inv-' + Date.now(),
-        format: 'pdf', // PDF එකක් විදිහටම සේව් කරන්න force කරනවා
     },
 });
 
