@@ -125,7 +125,7 @@ cloudinary.config({
   api_secret: 'BitZ3Bk0EqyFGocmYuwE1nP1gBw'
 });
 
-// --- PROFILE PICTURE STORAGE ---
+// --- PROFILE PICTURE STORAGE --------------------------------------------------------------------------------------------
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -137,7 +137,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage }); 
 
-// --- 1. INVOICE CLOUDINARY STORAGE SETUP ---
+// --- 1. INVOICE CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------------
 const invoiceCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -150,13 +150,14 @@ const invoiceCloudinaryStorage = new CloudinaryStorage({
 const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });
 
 
-// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---
+// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
 const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'customer_documents', 
         allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'],
         resource_type: 'auto', 
+        type: 'upload',
         public_id: (req, file) => 'DOC-' + Date.now() + '-' + file.originalname.split('.')[0],
     },
 });
@@ -167,12 +168,12 @@ const cpUpload = uploadDocs.fields([
     { name: 'billing', maxCount: 1 }
 ]);
 
-// --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---
+// --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------
 const zipCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'qr_zips', 
-        resource_type: 'raw', // ZIP ෆයිල් නිසා මේක අනිවාර්යයි
+        resource_type: 'raw', 
         public_id: (req, file) => 'ZIP-' + Date.now() + '-' + file.originalname.split('.')[0],
     },
 });
