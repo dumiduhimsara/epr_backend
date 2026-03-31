@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import https from 'https';
 
 
 dotenv.config();
@@ -1659,28 +1660,26 @@ app.get('/api/get-all-generated-qrs', async (req, res) => {
 
 
 
-// ✅ මේ Proxy Route එක අන්තිමට දාන්න (Axios ඕනේ නැහැ)
 app.get('/api/orders/download-invoice', async (req, res) => {
     const { url, fileName } = req.query;
-    
     if (!url) return res.status(400).send("URL is required");
 
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Cloudinary fetch failed");
+    // 💡 Cloudinary URL එකෙන් ෆයිල් එක අරගෙන ඇඩ්මින්ට ලබා දීම
+    https.get(url, (response) => {
+        if (response.statusCode !== 200) {
+            return res.status(500).send("Download failed from Cloudinary");
+        }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        // 💡 බ්‍රවුසරයට කියනවා මේක පීඩීඑෆ් එකක් කියලා සහ නම දෙනවා
+        // නිවැරදි Header දත්ත ලබා දෙනවා
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${fileName || 'invoice'}.pdf"`);
         
-        res.send(buffer);
-    } catch (error) {
-        console.error("Download Error:", error.message);
-        res.status(500).send('Download failed');
-    }
+        // කෙලින්ම දත්ත ටික ඇඩ්මින්ට Stream කරනවා
+        response.pipe(res);
+    }).on('error', (err) => {
+        console.error("Download Error:", err.message);
+        res.status(500).send("Download failed");
+    });
 });
 
 
