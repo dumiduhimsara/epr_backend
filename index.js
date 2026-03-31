@@ -155,12 +155,18 @@ const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'customer_documents', 
-        allowed_formats: ['pdf', 'jpg', 'png', 'jpeg'],
-        // ❌ resource_type: 'auto' වෙනුවට පල්ලෙහා තියෙන එකම දාන්න
-        resource_type: 'raw', // 🔥 PDF වලට resource_type එක අනිවාර්යයෙන්ම 'raw' විය යුතුයි
+        // 🔥 1. 'raw' වෙනුවට 'auto' දාන්න, හැබැයි format එක force කරන්න
+        resource_type: 'auto', 
         type: 'upload',
         access_mode: 'public', 
-        public_id: (req, file) => 'DOC-' + Date.now() + '-' + file.originalname.split('.')[0],
+        // 🔥 2. පල්ලෙහා පේළිය අනිවාර්යයෙන්ම මම මේ ලියපු විදිහටම ලියන්න
+        // මේකෙන් තමයි ෆයිල් එකට අගට .pdf කෑල්ල අනිවාර්යයෙන්ම එකතු කරන්නේ
+        public_id: (req, file) => {
+            const fileName = file.originalname.split('.')[0];
+            return `DOC-${Date.now()}-${fileName}`;
+        },
+        // 🔥 3. Extension එක අනිවාර්යයෙන්ම පීඩීඑෆ් කරන්න මේක දාන්න
+        format: 'pdf' 
     },
 });
 const uploadDocs = multer({ storage: docCloudinaryStorage });
