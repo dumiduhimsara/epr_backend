@@ -1650,6 +1650,51 @@ app.get('/api/get-all-generated-qrs', async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+
+
+// ✅ මේ Proxy Route එක අන්තිමට දාන්න (Axios ඕනේ නැහැ)
+app.get('/api/orders/download-invoice', async (req, res) => {
+    const { url, fileName } = req.query;
+    
+    if (!url) return res.status(400).send("URL is required");
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Cloudinary fetch failed");
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        // 💡 බ්‍රවුසරයට කියනවා මේක පීඩීඑෆ් එකක් කියලා සහ නම දෙනවා
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName || 'invoice'}.pdf"`);
+        
+        res.send(buffer);
+    } catch (error) {
+        console.error("Download Error:", error.message);
+        res.status(500).send('Download failed');
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`🚀 Server is live on port ${PORT}`);
