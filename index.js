@@ -12,7 +12,6 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import https from 'https';
 
 
 dotenv.config();
@@ -871,7 +870,7 @@ app.delete('/api/customer/:id', async (req, res) => {
 });
 
 // 9. Create Order with Invoice PDF (Updated with officialEmail)
-app.post('/api/orders/create', uploadInvoice.single('invoice'), async (req, res) => {
+ /*  app.post('/api/orders/create', uploadInvoice.single('invoice'), async (req, res) => {
     try {
         // 1. req.body එකෙන් සියලුම දත්ත ලබා ගැනීම
         const { invNum, company, role, division, orderType, officialEmail } = req.body;
@@ -902,7 +901,44 @@ app.post('/api/orders/create', uploadInvoice.single('invoice'), async (req, res)
         console.error("Order Creation Error:", error);
         res.status(500).json({ error: "Order failed to save" });
     }
+});   */
+
+
+// ✅ 1. 'uploadInvoice.single' කෑල්ල අයින් කළා (දැන් Multer ඕනේ නැහැ)
+app.post('/api/orders/create', async (req, res) => {
+    try {
+        // ✅ 2. දැන් 'invoiceFile' කියන String එක කෙලින්ම req.body එකෙන් ලැබෙනවා
+        const { invNum, company, role, division, orderType, officialEmail, invoiceFile } = req.body;
+        
+        const newOrder = new Order({
+            invNum,
+            company,
+            role,
+            division,  
+            orderType,
+            officialEmail: officialEmail, 
+            // ✅ 3. මෙතනට එන්නේ Frontend එකේ FileReader එකෙන් එවපු අකුරු වැල (Base64)
+            invoiceFile: invoiceFile, 
+            createdAt: new Date() 
+        });
+
+        await newOrder.save();
+
+        res.status(201).json({ 
+            message: "Order placed successfully!", 
+            order: newOrder 
+        });
+
+    } catch (error) {
+        console.error("Order Creation Error:", error);
+        res.status(500).json({ error: "Order failed to save" });
+    }
 });
+
+
+
+
+
 // 10. Get All Orders
 app.get('/api/orders/all', async (req, res) => {
     try {
