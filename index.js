@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import axios from 'axios'; 
 
 dotenv.config();
 
