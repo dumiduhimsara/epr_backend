@@ -138,12 +138,31 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage }); 
 
 // --- 1. INVOICE CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------------
-const invoiceCloudinaryStorage = new CloudinaryStorage({
+/*const invoiceCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'invoices', 
         allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'], 
         public_id: (req, file) => 'inv-' + Date.now(),
+    },
+});
+
+const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
+
+
+
+const invoiceCloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'invoices', 
+        allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'], 
+        // 🔥 1. මේ දෙක අනිවාර්යයෙන්ම දාන්න. එතකොටයි Permission ප්‍රශ්න නැති වෙන්නේ.
+        resource_type: 'auto', 
+        access_mode: 'public', 
+        
+        // 🔥 2. පීඩීඑෆ් එකට අගට .pdf කෑල්ල අනිවාර්යයෙන්ම වැටෙන්න මේක මෙහෙම හදන්න.
+        public_id: (req, file) => 'inv-' + Date.now(),
+        format: 'pdf', // PDF එකක් විදිහටම සේව් කරන්න force කරනවා
     },
 });
 
