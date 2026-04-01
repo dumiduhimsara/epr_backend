@@ -1303,33 +1303,34 @@ app.get('/api/co-partner/dashboard', async (req, res) => {
 
 app.post('/api/save-qr-batch', async (req, res) => {
     try {
-        const { batch } = req.body; 
+        const { batch } = req.body;
+        if (!batch || batch.length === 0) return res.status(400).json({ error: "No data provided" });
 
-        if (!batch || batch.length === 0) {
-            return res.status(400).json({ error: "No data provided" });
-        }
-
-        // 🛡️ Safe Method: මොඩල් එක මෙතනදී ලබා ගන්නවා (Not Defined Error එක වැළැක්වීමට)
         const QRBatchModel = mongoose.model('QRBatch');
 
-        // ඩේටාබේස් එකට බැච් එකම සේව් කරනවා
-        await QRBatchModel.insertMany(batch.map(item => ({
-            qrId: item.qrId,
-            company: item.company,
-            brand: item.brand,
-            product: item.product,
-            serialNumber: item.serialNumber,
-            mfd: item.mfd,
-            // 💡 පින්තූරේ Cloudinary ලින්ක් එක තිබේ නම් ඒකත් සේව් කරනවා
-            qrImage: item.qrImage || "" 
-        })));
+        // 🛡️ insertMany වෙනුවට bulkWrite පාවිච්චි කරමු (Duplicate Error එක එන්නේ නැහැ)
+        const operations = batch.map(item => ({
+            updateOne: {
+                filter: { qrId: item.qrId },
+                update: { $set: {
+                    company: item.company,
+                    brand: item.brand,
+                    product: item.product,
+                    serialNumber: item.serialNumber,
+                    mfd: item.mfd,
+                    qrImage: item.qrImage || ""
+                }},
+                upsert: true // තිබුණේ නැත්නම් අලුතින් හදනවා, තිබුණොත් Update කරනවා
+            }
+        }));
 
-        console.log(`✅ ${batch.length} QR IDs saved to Database.`);
+        await QRBatchModel.bulkWrite(operations);
+
+        console.log(`✅ ${batch.length} QR batch processed successfully.`);
         res.status(200).json({ message: "Batch saved successfully!" });
     } catch (error) {
-        // ලොග් එකේ වැරැද්ද පෙන්වනවා
         console.error("❌ Batch Save Error:", error.message);
-        res.status(500).json({ error: "Failed to save QR batch to database" });
+        res.status(500).json({ error: error.message });
     }
 });
 
