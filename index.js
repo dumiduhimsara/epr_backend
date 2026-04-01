@@ -141,16 +141,28 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage }); 
 
 // --- 1. INVOICE CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------------
-/*const invoiceCloudinaryStorage = new CloudinaryStorage({
+// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
+// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
+const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'invoices', 
-        allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'], 
-        public_id: (req, file) => 'inv-' + Date.now(),
+        folder: 'customer_documents', 
+        resource_type: 'raw',   // 👈 PDF ෆයිල් පින්තූර විදිහට නොවී Raw ෆයිල් විදිහට යවන්න
+        access_mode: 'public',  // 👈 ඇඩ්මින්ට ඕපන් කරලා බලන්න අවසර දෙන්න
+        // 💡 ෆයිල් එකේ නම අගට .pdf කෑල්ල එකතු කිරීමෙන් බ්‍රවුසරයට ඒක හඳුනාගන්න ලේසියි
+        public_id: (req, file) => `DOC-${Date.now()}-${file.originalname.split('.')[0]}.pdf`,
     },
 });
 
-const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
+const uploadDocs = multer({ storage: docCloudinaryStorage });
+
+// මේකෙන් තමයි ෆයිල් තුනම එකවර හැඬල් කරන්නේ
+const cpUpload = uploadDocs.fields([
+    { name: 'brc', maxCount: 1 },
+    { name: 'vat', maxCount: 1 },
+    { name: 'billing', maxCount: 1 }
+]);
+// ----------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -170,7 +182,7 @@ const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
 
 const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
 
-
+/*
 // --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
 const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
@@ -191,7 +203,7 @@ const cpUpload = uploadDocs.fields([
     { name: 'brc', maxCount: 1 },
     { name: 'vat', maxCount: 1 },
     { name: 'billing', maxCount: 1 }
-]);
+]);  */
 
 // --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------
 /*const zipCloudinaryStorage = new CloudinaryStorage({
@@ -488,12 +500,12 @@ app.post('/api/admin/register', async (req, res) => {
 
 //customer registration original kalin thibba code eka
 
-/*app.post('/api/customers/register', cpUpload, async (req, res) => {
-try {
+app.post('/api/customers/register', cpUpload, async (req, res) => {
+    try {
         const data = req.body;
+        const checkEmail = data.officialEmail; 
 
-      const checkEmail = data.officialEmail; 
-
+        // 🛡️ Email පරීක්ෂා කිරීම
         const exists1 = await Admin.findOne({ email: checkEmail });
         const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
         const exists3 = await CoPartner.findOne({ email: checkEmail });
@@ -502,10 +514,13 @@ try {
             return res.status(400).json({ error: "This email is already registered in our system!" });
         }
 
+        // 📂 Cloudinary ලින්ක් ලබා ගැනීම
+        // දැන් Cloudinary Settings හදලා නිසා මේ ලින්ක් ඇඩ්මින්ට කෙලින්ම ඕපන් වෙනවා
         const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
         const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
         const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
 
+        // 🆔 Registration Number එක සෑදීම
         const counter = await Counter.findOneAndUpdate(
             { id: 'customer_reg' },
             { $inc: { seq: 1 } },
@@ -516,22 +531,24 @@ try {
         const currentYear = new Date().getFullYear();
         const regNo = `EPR-${currentYear}-${sequenceStr}`;
 
+        // 🔑 Password Hash කිරීම
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
+        // 💾 නව පාරිභෝගිකයා සේව් කිරීම
         const newCustomer = new Customer({ 
             ...data, 
             password: hashedPassword,
             regNumber: regNo,   
             status: 'Pending',
-            brcDocument: brcPath,
+            brcDocument: brcPath,    // 👈 මේවායේ දැන් තියෙන්නේ 'public' Cloudinary ලින්ක්
             vatDocument: vatPath,
             billingDocument: billingPath
         });
 
         await newCustomer.save();
 
-        console.log(`✅ New Registration: ${regNo}`); 
+        console.log(`✅ New Registration with PDF access: ${regNo}`); 
         
         res.status(201).json({ 
             message: "Customer registered successfully! Admin approval pending.",
@@ -539,13 +556,13 @@ try {
         });
 
     } catch (error) {
-        console.error("❌ Error:", error);
+        console.error("❌ Registration Error:", error);
         res.status(500).json({ error: "Registration failed" });
     }
-});    */
+});
 
 // ✅ 'cpUpload' අයින් කරලා තියෙන්නේ (මොකද දැන් එන්නේ සාමාන්‍ය JSON එකක්)
-app.post('/api/customers/register', async (req, res) => {
+/*app.post('/api/customers/register', async (req, res) => {
     try {
         const data = req.body; // 👈 දැන් brcFile, vatFile, billingFile මේක ඇතුළේ Strings විදිහට එනවා
 
@@ -600,7 +617,7 @@ app.post('/api/customers/register', async (req, res) => {
         console.error("❌ Registration Error:", error);
         res.status(500).json({ error: "Registration failed" });
     }
-});
+});   */
 
 
 // UNIFIED LOGIN (Admin, Customer & Partner) login
