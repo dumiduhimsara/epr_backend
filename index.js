@@ -1615,7 +1615,8 @@ app.post('/api/orders/upload-zip/:id', tempZipUpload.single('zipFile'), async (r
         // 🚀 කෙලින්ම Cloudinary API එක පාවිච්චි කරලා 'raw' විදිහට යවනවා
         const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
             folder: 'qr_zips',
-            resource_type: 'raw', // 👈 මෙතනදී තමයි ZIP එකක් විදිහට පිළිගන්නේ
+            resource_type: 'raw', 
+            access_mode: 'public',
             public_id: `ZIP-${Date.now()}-${req.file.originalname.split('.')[0]}.zip`
         });
 
