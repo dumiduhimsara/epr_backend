@@ -1507,21 +1507,17 @@ app.post('/api/save-qr', async (req, res) => {
 app.post('/api/save-qr', async (req, res) => {
     try {
         const { qrId, qrData } = req.body;
-
-        // 1. Cloudinary වලට කෙලින්ම Base64 දත්ත අප්ලෝඩ් කරනවා
-        // 'generated_qrs' කියන ෆෝල්ඩර් එකේ QR ID එක නම විදිහට දාලා සේව් වෙනවා
+        const QRBatchModel = mongoose.model('QRBatch');
         const uploadResponse = await cloudinary.uploader.upload(qrData, {
             folder: 'generated_qrs',
             public_id: qrId,
             resource_type: 'image'
         });
 
-        // 2. දැන් මේ ලැබුණු Cloudinary URL එක විතරක් ඩේටාබේස් එකේ (QRBatch) සේව් කරනවා
-        // එතකොට 512MB MongoDB එකට කිසිම බරක් වෙන්නේ නැහැ
-        await QRBatch.findOneAndUpdate(
+      await QRBatchModel.findOneAndUpdate(
             { qrId: qrId }, 
-            { qrImage: uploadResponse.secure_url }, 
-            { upsert: true }
+            { $set: { qrImage: uploadResponse.secure_url } }, 
+            { upsert: true, new: true }
         );
 
         console.log(`✅ QR Saved to Cloudinary: ${qrId}`);
