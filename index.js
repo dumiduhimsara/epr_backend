@@ -1616,7 +1616,7 @@ app.post('/api/orders/upload-zip/:id', tempZipUpload.single('zipFile'), async (r
         const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
             folder: 'qr_zips',
             resource_type: 'raw', // 👈 මෙතනදී තමයි ZIP එකක් විදිහට පිළිගන්නේ
-            public_id: `ZIP-${Date.now()}-${req.file.originalname.split('.')[0]}`
+            public_id: `ZIP-${Date.now()}-${req.file.originalname.split('.')[0]}.zip`
         });
 
         // ඩේටාබේස් එක අප්ඩේට් කරනවා
