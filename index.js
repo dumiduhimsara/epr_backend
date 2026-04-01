@@ -206,20 +206,8 @@ const cpUpload = uploadDocs.fields([
 const uploadZip = multer({ storage: zipCloudinaryStorage }); */
 
 // --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------
-const zipCloudinaryStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'qr_zips', 
-        resource_type: 'raw', // 👈 ZIP ෆයිල් එකක් විදිහටම Cloudinary වලට යවන්න මේක අනිවාර්යයි
-        public_id: (req, file) => {
-            // ෆයිල් එකේ නම ලස්සනට හැදෙන්න මේ කොටස වැදගත්
-            const fileName = file.originalname.split('.')[0];
-            return `ZIP-${Date.now()}-${fileName}`;
-        },
-    },
-});
-
-const uploadZip = multer({ storage: zipCloudinaryStorage });
+// ✅ මේක විතරක් දාන්න (පරණ CloudinaryStorage එක අයින් කරලා)
+const tempZipUpload = multer({ dest: 'uploads/' });
 
 //................................................................................................................................
 // --- (SCHEMAS) ---
@@ -1554,7 +1542,7 @@ app.put('/api/orders/update/:id', async (req, res) => {
         const updatedOrder = await Order.findByIdAndUpdate(
             orderId,
             { status: status },
-            { new: true } // Update වුණු අලුත් record එකම ආපහු එවන්න
+            { new: true } 
         );
 
         if (!updatedOrder) {
@@ -1619,40 +1607,41 @@ app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, r
 }); */
 
 
-
-app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, res) => {
+app.post('/api/orders/upload-zip/:id', tempZipUpload.single('zipFile'), async (req, res) => {
     try {
+        const orderId = req.params.id;
         if (!req.file) return res.status(400).send('No file uploaded.');
 
-        const orderId = req.params.id;
-        
-        // 💡 Cloudinary URL එක req.file.path එකේ තියෙනවා
-        const zipPath = req.file.path; 
+        // 🚀 කෙලින්ම Cloudinary API එක පාවිච්චි කරලා 'raw' විදිහට යවනවා
+        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'qr_zips',
+            resource_type: 'raw', // 👈 මෙතනදී තමයි ZIP එකක් විදිහට පිළිගන්නේ
+            public_id: `ZIP-${Date.now()}-${req.file.originalname.split('.')[0]}`
+        });
 
+        // ඩේටාබේස් එක අප්ඩේට් කරනවා
         const updatedOrder = await Order.findByIdAndUpdate(
             orderId,
             { 
                 status: 'QR Sent', 
-                // 🚨 මෙතන 'qrZipFile' වෙනුවට 'qrZipUrl' කියලා දාපන්
-                qrZipUrl: zipPath 
+                qrZipUrl: uploadResponse.secure_url // ✅ Cloudinary URL එක
             },
             { new: true }
         );
 
-        console.log("✅ Cloudinary ZIP URL Saved to DB:", zipPath);
-        
-        res.status(200).json({ 
-            success: true,
-            message: 'ZIP Uploaded to Cloudinary successfully!', 
-            url: zipPath,
-            updatedOrder 
-        });
+        // සර්වර් එකේ තාවකාලිකව හැදුණු ෆයිල් එක මකලා දානවා
+        if (fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        console.log("✅ ZIP Uploaded Correctly:", uploadResponse.secure_url);
+        res.status(200).json({ success: true, url: uploadResponse.secure_url });
+
     } catch (error) {
-        console.error("❌ Upload Error:", error);
+        console.error("❌ Final ZIP Upload Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
-
 
 // index.js (Backend)
 app.post('/api/partner/confirm-collection', async (req, res) => {
