@@ -161,7 +161,6 @@ const cpUpload = uploadDocs.fields([
     { name: 'vat', maxCount: 1 },
     { name: 'billing', maxCount: 1 }
 ]);
-// ----------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -501,7 +500,7 @@ app.post('/api/admin/register', async (req, res) => {
 
 
 // 2. දැන් Register API එක
-app.post('/api/customers/register', cpUpload, async (req, res) => {
+/*app.post('/api/customers/register', cpUpload, async (req, res) => {
     try {
         const data = req.body;
         const checkEmail = data.officialEmail; 
@@ -572,10 +571,10 @@ app.post('/api/customers/register', cpUpload, async (req, res) => {
         console.error("❌ Registration Error Details:", error.message);
         res.status(500).json({ error: "Registration failed: " + error.message });
     }
-});
+}); */
 
 // ✅ 'cpUpload' අයින් කරලා තියෙන්නේ (මොකද දැන් එන්නේ සාමාන්‍ය JSON එකක්)
-/*app.post('/api/customers/register', async (req, res) => {
+app.post('/api/customers/register', async (req, res) => {
     try {
         const data = req.body; // 👈 දැන් brcFile, vatFile, billingFile මේක ඇතුළේ Strings විදිහට එනවා
 
@@ -630,7 +629,7 @@ app.post('/api/customers/register', cpUpload, async (req, res) => {
         console.error("❌ Registration Error:", error);
         res.status(500).json({ error: "Registration failed" });
     }
-});   */
+});   
 
 
 // UNIFIED LOGIN (Admin, Customer & Partner) login
