@@ -142,7 +142,6 @@ const upload = multer({ storage });
 
 // --- 1. INVOICE CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------------
 // --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
-// --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
 const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
