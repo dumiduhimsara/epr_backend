@@ -315,7 +315,7 @@ const qrBatchSchema = new mongoose.Schema({
     product: String,
     serialNumber: String,
     mfd: String,
-    qrImage: { type: String, default: "" }, // 👈 මේ පේළිය අනිවාර්යයෙන්ම ඕනේ!
+    qrImage: { type: String, default: "" }, 
     createdAt: { type: Date, default: Date.now }
 });
 
