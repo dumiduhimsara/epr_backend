@@ -194,7 +194,7 @@ const cpUpload = uploadDocs.fields([
 ]);
 
 // --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------
-const zipCloudinaryStorage = new CloudinaryStorage({
+/*const zipCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'qr_zips', 
@@ -203,7 +203,24 @@ const zipCloudinaryStorage = new CloudinaryStorage({
     },
 });
 
+const uploadZip = multer({ storage: zipCloudinaryStorage }); */
+
+// --- 3. ZIP FILES CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------
+const zipCloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'qr_zips', 
+        resource_type: 'raw', // 👈 ZIP ෆයිල් එකක් විදිහටම Cloudinary වලට යවන්න මේක අනිවාර්යයි
+        public_id: (req, file) => {
+            // ෆයිල් එකේ නම ලස්සනට හැදෙන්න මේ කොටස වැදගත්
+            const fileName = file.originalname.split('.')[0];
+            return `ZIP-${Date.now()}-${fileName}`;
+        },
+    },
+});
+
 const uploadZip = multer({ storage: zipCloudinaryStorage });
+
 //................................................................................................................................
 // --- (SCHEMAS) ---
 // Company Schema (QR Management)
@@ -289,7 +306,7 @@ const orderSchema = new mongoose.Schema({
     date: { type: String, default: () => new Date().toISOString().split('T')[0] },
     time: { type: String, default: () => new Date().toLocaleTimeString() },
     status: { type: String, default: 'Pending' },
-    qrZipFile: { type: String, default: null } 
+    qrZipUrl: { type: String, default: null } 
 });
 
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
@@ -1576,6 +1593,8 @@ app.put('/api/orders/update-status/:id', async (req, res) => {
     }
 });
 
+
+/*
 app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).send('No file uploaded.');
@@ -1593,6 +1612,41 @@ app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, r
         );
         console.log("✅ Cloudinary ZIP URL Saved:", zipPath);
         res.status(200).json({ message: 'ZIP Uploaded to Cloudinary successfully!', updatedOrder });
+    } catch (error) {
+        console.error("❌ Upload Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+}); */
+
+
+
+app.post('/api/orders/upload-zip/:id', uploadZip.single('zipFile'), async(req, res) => {
+    try {
+        if (!req.file) return res.status(400).send('No file uploaded.');
+
+        const orderId = req.params.id;
+        
+        // 💡 Cloudinary URL එක req.file.path එකේ තියෙනවා
+        const zipPath = req.file.path; 
+
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            { 
+                status: 'QR Sent', 
+                // 🚨 මෙතන 'qrZipFile' වෙනුවට 'qrZipUrl' කියලා දාපන්
+                qrZipUrl: zipPath 
+            },
+            { new: true }
+        );
+
+        console.log("✅ Cloudinary ZIP URL Saved to DB:", zipPath);
+        
+        res.status(200).json({ 
+            success: true,
+            message: 'ZIP Uploaded to Cloudinary successfully!', 
+            url: zipPath,
+            updatedOrder 
+        });
     } catch (error) {
         console.error("❌ Upload Error:", error);
         res.status(500).json({ error: error.message });
