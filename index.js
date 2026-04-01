@@ -1449,6 +1449,10 @@ app.post('/api/save-recycle-request', async (req, res) => {
             return res.status(404).json({ error: "QR registration not found!" });
         }
 
+const batchInfo = await mongoose.model('QRBatch').findOne({ qrId: qrId });
+        const imageUrl = batchInfo ? batchInfo.qrImage : "";
+
+
         // 3. අලුත් Request එක සේව් කරනවා (status එක 'Pending' ලෙස)
         const newRequest = new RecycleRequest({
             qrId,
@@ -1458,6 +1462,7 @@ app.post('/api/save-recycle-request', async (req, res) => {
             cuCompany,
             cuProduct,
             cuBrand,
+            qrImage: imageUrl,
             registeredAt: registration.cuDate,
             requestedAt: new Date(),
             status: 'Pending', // මෙතන තමයි වැදගත්ම දේ
