@@ -500,12 +500,14 @@ app.post('/api/admin/register', async (req, res) => {
 
 //customer registration original kalin thibba code eka
 
+
+// 2. දැන් Register API එක
 app.post('/api/customers/register', cpUpload, async (req, res) => {
     try {
         const data = req.body;
         const checkEmail = data.officialEmail; 
 
-        // 🛡️ Email පරීක්ෂා කිරීම
+        // 🛡️ Email එක කලින් පද්ධතියේ තිබේදැයි පරීක්ෂා කිරීම
         const exists1 = await Admin.findOne({ email: checkEmail });
         const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
         const exists3 = await CoPartner.findOne({ email: checkEmail });
@@ -515,12 +517,12 @@ app.post('/api/customers/register', cpUpload, async (req, res) => {
         }
 
         // 📂 Cloudinary ලින්ක් ලබා ගැනීම
-        // දැන් Cloudinary Settings හදලා නිසා මේ ලින්ක් ඇඩ්මින්ට කෙලින්ම ඕපන් වෙනවා
-        const brcPath = req.files['brc'] ? req.files['brc'][0].path : null;
-        const vatPath = req.files['vat'] ? req.files['vat'][0].path : null;
-        const billingPath = req.files['billing'] ? req.files['billing'][0].path : null;
+        // req.files['field_name'] හරහා Cloudinary URL එක ගන්නවා
+        const brcPath = req.files['brc'] ? req.files['brc'][0].path : '';
+        const vatPath = req.files['vat'] ? req.files['vat'][0].path : '';
+        const billingPath = req.files['billing'] ? req.files['billing'][0].path : '';
 
-        // 🆔 Registration Number එක සෑදීම
+        // 🆔 Registration Number එක සෑදීම (Auto-increment)
         const counter = await Counter.findOneAndUpdate(
             { id: 'customer_reg' },
             { $inc: { seq: 1 } },
@@ -535,29 +537,41 @@ app.post('/api/customers/register', cpUpload, async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(data.password, salt);
 
-        // 💾 නව පාරිභෝගිකයා සේව් කිරීම
+        // 💾 Schema එකට ගැලපෙන විදිහට නව පාරිභෝගිකයා සේව් කිරීම
         const newCustomer = new Customer({ 
-            ...data, 
+            companyName: data.companyName,
+            orgRole: data.orgRole,
+            companyWebsite: data.companyWebsite,
+            phone: data.phone,
+            whatsapp: data.whatsapp,
+            officialEmail: data.officialEmail,
+            address1: data.address1,
+            address2: data.address2,
+            postalCode: data.postalCode,
+            country: data.country,
+            contactPersonName: data.contactPersonName,
+            contactPersonMobile: data.contactPersonMobile,
+            dob: data.dob,
             password: hashedPassword,
             regNumber: regNo,   
             status: 'Pending',
-            brcDocument: brcPath,    // 👈 මේවායේ දැන් තියෙන්නේ 'public' Cloudinary ලින්ක්
+            // ✅ Cloudinary URL ටික Schema එකේ Field Names වලටම සේව් කරනවා
+            brcDocument: brcPath,
             vatDocument: vatPath,
             billingDocument: billingPath
         });
 
         await newCustomer.save();
 
-        console.log(`✅ New Registration with PDF access: ${regNo}`); 
-        
+        console.log(`✅ New Registration Successful: ${regNo}`); 
         res.status(201).json({ 
             message: "Customer registered successfully! Admin approval pending.",
             regNumber: regNo 
         });
 
     } catch (error) {
-        console.error("❌ Registration Error:", error);
-        res.status(500).json({ error: "Registration failed" });
+        console.error("❌ Registration Error Details:", error.message);
+        res.status(500).json({ error: "Registration failed: " + error.message });
     }
 });
 
