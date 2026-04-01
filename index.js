@@ -296,7 +296,7 @@ const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
 
 
-const qrBatchSchema = new mongoose.Schema({
+/*const qrBatchSchema = new mongoose.Schema({
     qrId: { type: String, required: true, unique: true },
     company: String,
     brand: String,
@@ -305,8 +305,19 @@ const qrBatchSchema = new mongoose.Schema({
     mfd: String,
     createdAt: { type: Date, default: Date.now }
 });
-const QRBatch = mongoose.model('QRBatch', qrBatchSchema);
+const QRBatch = mongoose.model('QRBatch', qrBatchSchema);  */
 
+
+const qrBatchSchema = new mongoose.Schema({
+    qrId: { type: String, required: true, unique: true },
+    company: String,
+    brand: String,
+    product: String,
+    serialNumber: String,
+    mfd: String,
+    qrImage: { type: String, default: "" }, // 👈 මේ පේළිය අනිවාර්යයෙන්ම ඕනේ!
+    createdAt: { type: Date, default: Date.now }
+});
 
 // QR REGISTRATION SCHEMA
 const qrRegistrationSchema = new mongoose.Schema({
