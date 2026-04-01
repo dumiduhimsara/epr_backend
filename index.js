@@ -359,6 +359,7 @@ const recycleRequestSchema = new mongoose.Schema({
     cuCompany: String,
     cuProduct: String,
     cuBrand: String,
+    qrImage: { type: String, default: "" },
     status: { type: String, default: 'Pending' }, 
     registeredAt: { type: Date },                 
     requestedAt: { type: Date, default: Date.now },
