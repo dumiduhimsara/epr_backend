@@ -1425,7 +1425,7 @@ app.post('/api/save-recycle-request', async (req, res) => {
 });
 
         // QR save folder එකට image save කරන API එක (QR Management සඳහා)
-
+/*
 app.post('/api/save-qr', async (req, res) => {
     try {
         const { qrId, qrData } = req.body;
@@ -1443,6 +1443,38 @@ app.post('/api/save-qr', async (req, res) => {
             res.json({ success: true });
         });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});  */
+
+
+
+// ✅ Cloudinary වලට QR එක සේව් කරන අලුත් Endpoint එක
+app.post('/api/save-qr', async (req, res) => {
+    try {
+        const { qrId, qrData } = req.body;
+
+        // 1. Cloudinary වලට කෙලින්ම Base64 දත්ත අප්ලෝඩ් කරනවා
+        // 'generated_qrs' කියන ෆෝල්ඩර් එකේ QR ID එක නම විදිහට දාලා සේව් වෙනවා
+        const uploadResponse = await cloudinary.uploader.upload(qrData, {
+            folder: 'generated_qrs',
+            public_id: qrId,
+            resource_type: 'image'
+        });
+
+        // 2. දැන් මේ ලැබුණු Cloudinary URL එක විතරක් ඩේටාබේස් එකේ (QRBatch) සේව් කරනවා
+        // එතකොට 512MB MongoDB එකට කිසිම බරක් වෙන්නේ නැහැ
+        await QRBatch.findOneAndUpdate(
+            { qrId: qrId }, 
+            { qrImage: uploadResponse.secure_url }, 
+            { upsert: true }
+        );
+
+        console.log(`✅ QR Saved to Cloudinary: ${qrId}`);
+        res.json({ success: true, url: uploadResponse.secure_url });
+
+    } catch (error) {
+        console.error("❌ QR Save Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 });
