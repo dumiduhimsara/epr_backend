@@ -1319,9 +1319,9 @@ app.post('/api/save-qr-batch', async (req, res) => {
                     product: item.product,
                     serialNumber: item.serialNumber,
                     mfd: item.mfd,
-                    qrImage: item.qrImage || ""
+                   // qrImage: item.qrImage || ""
                 }},
-                upsert: true // තිබුණේ නැත්නම් අලුතින් හදනවා, තිබුණොත් Update කරනවා
+                upsert: true 
             }
         }));
 
@@ -1514,7 +1514,7 @@ app.post('/api/save-qr', async (req, res) => {
             resource_type: 'image'
         });
 
-      await QRBatchModel.findOneAndUpdate(
+        await QRBatchModel.findOneAndUpdate(
             { qrId: qrId }, 
             { $set: { qrImage: uploadResponse.secure_url } }, 
             { upsert: true, new: true }
@@ -1522,7 +1522,6 @@ app.post('/api/save-qr', async (req, res) => {
 
         console.log(`✅ QR Saved to Cloudinary: ${qrId}`);
         res.json({ success: true, url: uploadResponse.secure_url });
-
     } catch (error) {
         console.error("❌ QR Save Error:", error.message);
         res.status(500).json({ error: error.message });
