@@ -1791,7 +1791,7 @@ app.get('/api/admin/products', async (req, res) => {
 
 
 // 🛠️ API එක හරියටම මේ විදිහට තියෙන්න ඕනේ
-app.get('/api/get-all-generated-qrs', async (req, res) => {
+/*  app.get('/api/get-all-generated-qrs', async (req, res) => {
     try {
         const allGeneratedQRs = await QRBatch.find({}).sort({ createdAt: -1 });
         const companies = await QRCompany.find({}); 
@@ -1808,6 +1808,42 @@ app.get('/api/get-all-generated-qrs', async (req, res) => {
         res.status(200).json(enrichedData);
     } catch (error) {
         console.error("Error fetching QR log:", error);
+        res.status(500).json({ error: "Failed to fetch data" });
+    }
+}); */
+
+
+
+app.get('/api/get-all-generated-qrs', async (req, res) => {
+    try {
+        // 🛡️ Safe Method: Model එක මෙතනදීම ලබා ගන්නවා
+        const QRBatchModel = mongoose.model('QRBatch');
+        const QRCompanyModel = mongoose.model('QRCompany');
+
+        // 1. සියලුම QR Batch දත්ත ලබා ගැනීම (qrImage එකත් එක්කම එනවා)
+        const allGeneratedQRs = await QRBatchModel.find({}).sort({ createdAt: -1 });
+        const companies = await QRCompanyModel.find({}); 
+
+        const enrichedData = allGeneratedQRs.map(qr => {
+            const qrObj = qr.toObject();
+            
+            // 2. Registration ID එක නැතිනම් ඒක පුරවනවා
+            if (!qrObj.registrationId) {
+                const foundCompany = companies.find(c => c.name === qrObj.company);
+                qrObj.registrationId = foundCompany ? foundCompany.registrationId : "REG-N/A";
+            }
+
+            // 3. QR Image එක තියෙනවද කියලා බලනවා, නැත්නම් Default එකක් දානවා (Frontend එකේ අවුල් නොවෙන්න)
+            if (!qrObj.qrImage) {
+                qrObj.qrImage = 'https://cdn-icons-png.flaticon.com/512/7141/7141731.png';
+            }
+
+            return qrObj;
+        });
+
+        res.status(200).json(enrichedData);
+    } catch (error) {
+        console.error("❌ Error fetching QR log:", error.message);
         res.status(500).json({ error: "Failed to fetch data" });
     }
 });
