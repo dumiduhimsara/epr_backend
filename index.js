@@ -318,6 +318,8 @@ const qrBatchSchema = new mongoose.Schema({
     qrImage: { type: String, default: "" }, 
     createdAt: { type: Date, default: Date.now }
 });
+const QRBatch = mongoose.model('QRBatch', qrBatchSchema);
+
 
 // QR REGISTRATION SCHEMA
 const qrRegistrationSchema = new mongoose.Schema({
@@ -1273,7 +1275,7 @@ app.get('/api/co-partner/dashboard', async (req, res) => {
 
 
 // 23. Save Generated QR Batch to Database
-app.post('/api/save-qr-batch', async (req, res) => {
+/*app.post('/api/save-qr-batch', async (req, res) => {
     try {
         const { batch } = req.body; // Frontend එකෙන් එවපු array එක
 
@@ -1297,6 +1299,40 @@ app.post('/api/save-qr-batch', async (req, res) => {
         console.error("❌ Batch Save Error:", error);
         res.status(500).json({ error: "Failed to save QR batch to database" });
     }});
+*/
+
+app.post('/api/save-qr-batch', async (req, res) => {
+    try {
+        const { batch } = req.body; 
+
+        if (!batch || batch.length === 0) {
+            return res.status(400).json({ error: "No data provided" });
+        }
+
+        // 🛡️ Safe Method: මොඩල් එක මෙතනදී ලබා ගන්නවා (Not Defined Error එක වැළැක්වීමට)
+        const QRBatchModel = mongoose.model('QRBatch');
+
+        // ඩේටාබේස් එකට බැච් එකම සේව් කරනවා
+        await QRBatchModel.insertMany(batch.map(item => ({
+            qrId: item.qrId,
+            company: item.company,
+            brand: item.brand,
+            product: item.product,
+            serialNumber: item.serialNumber,
+            mfd: item.mfd,
+            // 💡 පින්තූරේ Cloudinary ලින්ක් එක තිබේ නම් ඒකත් සේව් කරනවා
+            qrImage: item.qrImage || "" 
+        })));
+
+        console.log(`✅ ${batch.length} QR IDs saved to Database.`);
+        res.status(200).json({ message: "Batch saved successfully!" });
+    } catch (error) {
+        // ලොග් එකේ වැරැද්ද පෙන්වනවා
+        console.error("❌ Batch Save Error:", error.message);
+        res.status(500).json({ error: "Failed to save QR batch to database" });
+    }
+});
+
 
 // --- 24.5 පාරිභෝගිකයා ලියාපදිංචි කිරීම (REGISTER) ---
 app.post('/api/save-registration', async (req, res) => {
