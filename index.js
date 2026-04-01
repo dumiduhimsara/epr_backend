@@ -138,7 +138,6 @@ const storage = new CloudinaryStorage({
         public_id: (req, file) => 'profile-' + Date.now(),
     },
 });
-
 const upload = multer({ storage }); 
 
 // --- 1. INVOICE CLOUDINARY STORAGE SETUP ---------------------------------------------------------------------------------
@@ -155,7 +154,7 @@ const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
 
 
 
-const invoiceCloudinaryStorage = new CloudinaryStorage({
+/*const invoiceCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'invoices', 
@@ -169,7 +168,7 @@ const invoiceCloudinaryStorage = new CloudinaryStorage({
     },
 });
 
-const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });
+const uploadInvoice = multer({ storage: invoiceCloudinaryStorage });  */
 
 
 // --- 2. DOCUMENTS (BRC/VAT/BILLING) CLOUDINARY STORAGE SETUP ---------------------------------------------------------------
@@ -177,17 +176,13 @@ const docCloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'customer_documents', 
-        // 🔥 1. 'raw' වෙනුවට 'auto' දාන්න, හැබැයි format එක force කරන්න
         resource_type: 'auto', 
         type: 'upload',
         access_mode: 'public', 
-        // 🔥 2. පල්ලෙහා පේළිය අනිවාර්යයෙන්ම මම මේ ලියපු විදිහටම ලියන්න
-        // මේකෙන් තමයි ෆයිල් එකට අගට .pdf කෑල්ල අනිවාර්යයෙන්ම එකතු කරන්නේ
         public_id: (req, file) => {
             const fileName = file.originalname.split('.')[0];
             return `DOC-${Date.now()}-${fileName}`;
         },
-        // 🔥 3. Extension එක අනිවාර්යයෙන්ම පීඩීඑෆ් කරන්න මේක දාන්න
         format: 'pdf' 
     },
 });
@@ -472,8 +467,9 @@ app.post('/api/admin/register', async (req, res) => {
     }
 });
 
-//customer registration
-app.post('/api/customers/register', cpUpload, async (req, res) => {
+//customer registration original kalin thibba code eka
+
+/*app.post('/api/customers/register', cpUpload, async (req, res) => {
 try {
         const data = req.body;
 
@@ -525,6 +521,64 @@ try {
 
     } catch (error) {
         console.error("❌ Error:", error);
+        res.status(500).json({ error: "Registration failed" });
+    }
+});    */
+
+// ✅ 'cpUpload' අයින් කරලා තියෙන්නේ (මොකද දැන් එන්නේ සාමාන්‍ය JSON එකක්)
+app.post('/api/customers/register', async (req, res) => {
+    try {
+        const data = req.body; // 👈 දැන් brcFile, vatFile, billingFile මේක ඇතුළේ Strings විදිහට එනවා
+
+        const checkEmail = data.officialEmail; 
+
+        // 1. Email එක කලින් පද්ධතියේ තිබේදැයි පරීක්ෂා කිරීම (පරණ ලොජික් එකමයි)
+        const exists1 = await Admin.findOne({ email: checkEmail });
+        const exists2 = await Customer.findOne({ officialEmail: checkEmail }); 
+        const exists3 = await CoPartner.findOne({ email: checkEmail });
+
+        if (exists1 || exists2 || exists3) {
+            return res.status(400).json({ error: "This email is already registered in our system!" });
+        }
+
+        // 2. Registration Number එක සෑදීම (පරණ ලොජික් එකමයි)
+        const counter = await Counter.findOneAndUpdate(
+            { id: 'customer_reg' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+
+        const sequenceStr = counter.seq.toString().padStart(7, '0');
+        const currentYear = new Date().getFullYear();
+        const regNo = `EPR-${currentYear}-${sequenceStr}`;
+
+        // 3. Password එක Hash කිරීම
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(data.password, salt);
+
+        // 4. අලුත් Customer Record එක සෑදීම
+        const newCustomer = new Customer({ 
+            ...data, 
+            password: hashedPassword,
+            regNumber: regNo,   
+            status: 'Pending',
+            // ✅ Cloudinary path වෙනුවට Frontend එකෙන් එවන Base64 String එක කෙලින්ම සේව් කරනවා
+            brcDocument: data.brcFile || null,
+            vatDocument: data.vatFile || null,
+            billingDocument: data.billingFile || null
+        });
+
+        await newCustomer.save();
+
+        console.log(`✅ New Base64 Registration: ${regNo}`); 
+        
+        res.status(201).json({ 
+            message: "Customer registered successfully! Admin approval pending.",
+            regNumber: regNo 
+        });
+
+    } catch (error) {
+        console.error("❌ Registration Error:", error);
         res.status(500).json({ error: "Registration failed" });
     }
 });
