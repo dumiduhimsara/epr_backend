@@ -4,7 +4,7 @@ import RecycleRequest from '../../models/RecycleRequest.js';
 import bcrypt from 'bcryptjs';
 import Admin from '../../models/Admin.js';
 import Customer from '../../models/Customer.js';
-import { tempZipUpload } from '../../index.js';
+import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
 
 const router = express.Router();
 
