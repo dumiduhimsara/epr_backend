@@ -9,7 +9,7 @@ import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
 const router = express.Router();
 
 // Customer Registration Route
-router.post('/customers/register', async (req, res) => {
+router.post('/register', async (req, res) => {
     try {
         const data = req.body;
 
