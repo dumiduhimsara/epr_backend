@@ -4,8 +4,7 @@ import Customer from '../../models/Customer.js';
 import Admin from '../../models/Admin.js';
 import CoPartner from '../../models/CoPartner.js';
 import Counter from '../../models/Counter.js';
-import { upload, cpUpload } from '../../index.js';
-
+import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
 
 const router = express.Router();
 

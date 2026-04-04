@@ -3,15 +3,12 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import PDFDocument from 'pdfkit';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 // --- (IMPORT models) ---
 import Admin from './models/Admin.js';
@@ -27,7 +24,6 @@ import Product from './models/Product.js';
 import QRCompany from './models/QRCompany.js';
 import QRProduct from './models/QRProduct.js';
 
-
 // --- (IMPORT ROUTES) ---
 import authRoutes from './src/routes/authRoutes.js';
 import customerRoutes from './src/routes/customerRoutes.js';
@@ -36,7 +32,6 @@ import qrRoutes from './src/routes/qrRoutes.js';
 import partnerRoutes from './src/routes/partnerRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,9 +39,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-//middlewares
+// --- 1. MIDDLEWARES ---
 app.use(cors({
-  origin: [
+    origin: [
         'https://dumidu.vercel.app', 
         'http://localhost:5173', 
     ],
@@ -57,7 +52,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-//static files
+// --- 2. STATIC FILES & DIRECTORIES ---
 const docDir = './documents';
 if (!fs.existsSync(docDir)) {
     fs.mkdirSync(docDir, { recursive: true });
@@ -69,7 +64,7 @@ app.use('/documents', express.static(path.join(__dirname, 'documents')));
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 app.use('/qr-images', express.static(path.join(__dirname, 'qr-images'))); 
 
-//database connection
+// --- 3. DATABASE CONNECTION ---
 const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dumidu:su123@cluster0.zkbmh7n.mongodb.net/epr_portal?retryWrites=true&w=majority&family=4';
 
 mongoose.connect(mongoURI)
@@ -81,74 +76,31 @@ mongoose.connect(mongoURI)
     console.error(err.message);
   });
 
-//JWT AND MIDDLEWARES
+// --- 4. JWT & AUTH MIDDLEWARE ---
 const JWT_SECRET = process.env.JWT_SECRET; 
-
 if (!JWT_SECRET) {
     console.error("FATAL ERROR: JWT_SECRET is not defined in environment variables.");
     process.exit(1);
 }
+
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; 
 
-    if (!token) {
-        return res.status(401).json({ error: "Access Denied. No session found." });
-    }
+    if (!token) return res.status(401).json({ error: "Access Denied. No session found." });
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: "Your session has expired. Please login again." });
-        }
+        if (err) return res.status(403).json({ error: "Your session has expired. Please login again." });
         req.user = user; 
         next();
     });
 };
 
-//cloudinary configuration
-cloudinary.config({
-  cloud_name: 'de2uxpvdz',
-  api_key: '362669515799133',
-  api_secret: 'BitZ3Bk0EqyFGocmYuwE1nP1gBw'
-});
-
-//profile picture storage setup
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'user_profiles',
-        allowed_formats: ['jpg', 'png', 'jpeg'],
-        public_id: (req, file) => 'profile-' + Date.now(),
-    },
-});
-export const upload = multer({ storage });
-
-//documents storage setup
-const docCloudinaryStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'customer_documents', 
-        resource_type: 'raw',  
-        access_mode: 'public',  
-        public_id: (req, file) => `DOC-${Date.now()}-${file.originalname.split('.')[0]}.pdf`,
-    },
-});
-
-export const uploadDocs = multer({ storage: docCloudinaryStorage });
-
-export const cpUpload = uploadDocs.fields([
-    { name: 'brc', maxCount: 1 },
-    { name: 'vat', maxCount: 1 },
-    { name: 'billing', maxCount: 1 }
-]);
-
-//temp zip upload (for bulk QR code generation)
-export const tempZipUpload = multer({ dest: 'uploads/' });
-
+// --- 5. OTP STORE ---
 let otpStore = {}; 
 export { otpStore };
 
-// Brevo API Configuration
+// --- 6. BREVO EMAIL CONFIGURATION ---
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY; 
@@ -172,9 +124,7 @@ export const sendEmail = async (email, otp) => {
     }
 };
 
-
-
-// --- (ROUTES) ---
+// --- 7. ROUTES ---
 app.get('/', (req, res) => {
     res.status(200).send("✅ EPR Backend is Live and Running!");
 });
@@ -186,8 +136,8 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/partners', partnerRoutes);   
 app.use('/api/admin', adminRoutes);
 
-
-//start server
+// --- 8. START SERVER ---
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {console.log(`🚀 Server is live on port ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`🚀 Server is live on port ${PORT}`);
 });

@@ -3,7 +3,7 @@ import Order from '../../models/Order.js';
 import https from 'https';
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
-import { tempZipUpload } from '../../index.js';
+import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
 
 const router = express.Router();
 
