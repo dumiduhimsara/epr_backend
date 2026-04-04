@@ -43,7 +43,7 @@ router.get('/orders/user/:email/:division', async (req, res) => {
 });
 
 // Update order status (Admin use)
-router.put('/orders/update-status/:id', async (req, res) => {
+router.put('/update-status/:id', async (req, res) => {
      try {
         const { status } = req.body;
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -65,7 +65,7 @@ router.put('/orders/update-status/:id', async (req, res) => {
 });
 
 //upload zip file for order
-router.post('/orders/upload-zip/:id', tempZipUpload.single('zipFile'), async (req, res) => {
+router.post('/upload-zip/:id', tempZipUpload.single('zipFile'), async (req, res) => {
      try {
         const orderId = req.params.id;
         if (!req.file) return res.status(400).send('No file uploaded.');
@@ -121,7 +121,7 @@ router.get('/orders/download-invoice', async (req, res) => {
 });
 
 // Get all orders
-router.get('/orders/all', async (req, res) => {
+router.get('/all', async (req, res) => {
        try {
         const orders = await Order.find().sort({ _id: -1 });
         res.status(200).json(orders);
