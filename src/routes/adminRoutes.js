@@ -10,10 +10,8 @@ import Product from '../../models/Product.js';
 const router = express.Router();
 
 // Admin dashboard route
-router.get('/admin/pending-customers', async (req, res) => {
+router.get('/pending-customers', async (req, res) => {
        try {
-       // const CustomerModel = mongoose.model('Customer');
-       // const pendingList = await CustomerModel.find({ status: 'Pending' });
        const pendingList = await Customer.find({ status: 'Pending' });
         res.status(200).json(pendingList);
     } catch (error) {
@@ -120,7 +118,7 @@ router.post('/products/register', async (req, res) => {
 });
 
 //products route get all products
-router.get('/admin/products', async (req, res) => {
+router.get('/products', async (req, res) => {
        try {
         const products = await Product.find().sort({ createdAt: -1 });
         res.json(products);
@@ -130,7 +128,7 @@ router.get('/admin/products', async (req, res) => {
 });
 
 //customer approval route
-router.put('/admin/approve-customer/:id', async (req, res) => {
+router.put('/approve-customer/:id', async (req, res) => {
     try {
         const CustomerModel = mongoose.model('Customer');
         const updatedCustomer = await CustomerModel.findByIdAndUpdate(
@@ -229,7 +227,7 @@ router.put('/admin/approve-customer/:id', async (req, res) => {
 });
 
 // Customer statistics route
-router.get('/admin/customer-stats', async (req, res) => {
+router.get('/customer-stats', async (req, res) => {
         try {
         const CustomerModel = mongoose.model('Customer');
         const total = await Customer.countDocuments();
