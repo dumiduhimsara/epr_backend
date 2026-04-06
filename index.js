@@ -130,8 +130,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);         
-app.use('/api/customers', customerRoutes); 
-app.use('/api/orders', orderRoutes);      
+app.use('/api/customers', authenticateToken, customerRoutes); 
+app.use('/api/orders', authenticateToken, orderRoutes);     
 app.use('/api/qr', qrRoutes);             
 app.use('/api/partners', partnerRoutes);   
 app.use('/api/admin', adminRoutes);

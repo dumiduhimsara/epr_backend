@@ -101,7 +101,7 @@ router.post('/upload-zip/:id', tempZipUpload.single('zipFile'), async (req, res)
 
 
 // Download invoice file
-router.get('/orders/download-invoice', async (req, res) => {
+router.get('/download-invoice', async (req, res) => {
       const { url, fileName } = req.query;
     if (!url) return res.status(400).send("URL is required");
 
@@ -131,7 +131,7 @@ router.get('/all', async (req, res) => {
 });
 
 // Update order status
-router.put('/orders/update/:id', async (req, res) => {
+router.put('/update/:id', async (req, res) => {
      try {
         const { status } = req.body; 
         const orderId = req.params.id;
