@@ -8,7 +8,7 @@ import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
 const router = express.Router();
 
 // Create a new order
-router.post('/orders/create', async (req, res) => {
+router.post('/create', async (req, res) => {
      try {
         const { invNum, company, role, division, orderType, officialEmail, invoiceFile } = req.body;
         
@@ -27,7 +27,7 @@ router.post('/orders/create', async (req, res) => {
 });
 
 // Get orders by user email and division
-router.get('/orders/user/:email/:division', async (req, res) => {
+router.get('/user/:email/:division', async (req, res) => {
     try {
         const { email, division } = req.params;
         const orders = await Order.find({ 
