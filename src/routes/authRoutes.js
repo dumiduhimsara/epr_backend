@@ -5,7 +5,6 @@ import Admin from '../../models/Admin.js';
 import Customer from '../../models/Customer.js';
 import CoPartner from '../../models/CoPartner.js';
 import Counter from '../../models/Counter.js';
-//import { sendEmail } from '../utils/email.js';
 import { sendEmail } from '../../index.js';
 
 const router = express.Router();
@@ -162,8 +161,6 @@ router.post('/customers/reset-password', async (req, res) => {
         res.status(500).json({ error: "Failed to update password!" });
     }
 });
-
-
 
 //customer verify OTP
 router.post('/customers/verify-otp', (req, res) => {
