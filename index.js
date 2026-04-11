@@ -130,7 +130,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);         
-//app.post('/api/customers/register', customerRoutes); 
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', authenticateToken, orderRoutes);     
 app.use('/api/qr', qrRoutes);             

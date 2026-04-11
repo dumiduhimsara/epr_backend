@@ -138,4 +138,27 @@ try {
     }
 });
 
+
+//products route
+router.post('/products/register', async (req, res) => {
+    try {
+        const productData = req.body;
+        const newProduct = new Product(productData);
+        await newProduct.save();
+
+        console.log("✅ New Product Registered:", newProduct._id);
+        res.status(201).json({ 
+            success: true, 
+            message: 'Product Registered Successfully!',
+            productId: newProduct._id 
+        });
+    } catch (error) {
+        console.error("❌ Registration Error:", error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
 export default router;    
