@@ -5,6 +5,8 @@ import Admin from '../../models/Admin.js';
 import CoPartner from '../../models/CoPartner.js';
 import Counter from '../../models/Counter.js';
 import { upload, cpUpload, tempZipUpload } from '../middlewares/upload.js';
+import Product from '../../models/Product.js';
+
 
 const router = express.Router();
 
